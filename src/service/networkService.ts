@@ -31,8 +31,15 @@ export class NetworkService {
             logger.info(log);
 
     }
-    static async addIptables(tun: string, destination: string) {
-
+    static async addIptables(tun: string, clientIp: string, destinationNetwork: string) {
+        logger.info(`adding iptables client  ${clientIp} destination ${destinationNetwork} dev ${tun}`);
+        //iptables -A INPUT -s clientIp -i tun -d destinationNetwork -j ACCEPT otherwise drop
+        const log = await Util.exec(`iptables -A INPUT ! -s ${clientIp} -i ${tun} -j DROP`)
+        if (log)
+            logger.info(log)
+        const log2 = await Util.exec(`iptables -A INPUT ! -d ${destinationNetwork} -i ${tun} -j DROP`)
+        if (log2)
+            logger.info(log2)
     }
 
 
