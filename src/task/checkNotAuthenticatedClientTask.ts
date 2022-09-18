@@ -41,7 +41,7 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
         if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork) {
             await NetworkService.linkUp(tunnel.tun);
             await NetworkService.addRoute(tunnel.tun, `${tunnel.assignedClientIp}/32`);
-            await NetworkService.addIptables(tunnel.tun, tunnel.assignedClientIp, tunnel.serviceNetwork);
+            await NetworkService.addToIptablesClient(tunnel.tun, tunnel.assignedClientIp);
         }
     }
     protected async configure(tunnelkey: string) {

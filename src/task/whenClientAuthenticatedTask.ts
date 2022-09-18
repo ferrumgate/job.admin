@@ -48,7 +48,7 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
                 // this code is also in checkNotAuthenticatedClientTask.ts
                 await NetworkService.linkUp(tunnel.tun);
                 await NetworkService.addRoute(tunnel.tun, `${tunnel.assignedClientIp}/32`);
-                await NetworkService.addIptables(tunnel.tun, tunnel.assignedClientIp, tunnel.serviceNetwork);
+                await NetworkService.addToIptablesClient(tunnel.tun, tunnel.assignedClientIp);
             }
             //remove from configure list
             await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnel.id || '');
@@ -79,9 +79,9 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
                 await this.start();
             }, 5000);//try again 5seconds
         }
-
-
     }
+
+
     async stop(): Promise<void> {
         try {
             await this.redis?.disconnect();
