@@ -43,9 +43,12 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
             HelperService.isValidTunnel(tunnel);
             tunnelId = tunnel.id;
             if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
-            if (tunnel.tun) {// interface up and add routing
+            if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork) {
+                // interface up and add routing
+                // this code is also in checkNotAuthenticatedClientTask.ts
                 await NetworkService.linkUp(tunnel.tun);
                 await NetworkService.addRoute(tunnel.tun, `${tunnel.assignedClientIp}/32`);
+                await NetworkService.addIptables(tunnel.tun, tunnel.assignedClientIp, tunnel.serviceNetwork);
             }
             //remove from configure list
             await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnel.id || '');

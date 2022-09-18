@@ -19,6 +19,8 @@ export class HelperService {
             throw new Error('tunnel is not valid, no assignedClientIp');
         if (!tun.hostId)
             throw new Error('tunnel is not valid, no hostId');
+        if (!tun.serviceNetwork)
+            throw new Error('tunnel is not valid, no serviceNetwork');
 
     }
 }
