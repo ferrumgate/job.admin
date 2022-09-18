@@ -5,7 +5,7 @@
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisOptions, RedisService } from '../src/service/redisService';
 import { WhenClientAuthenticatedTask } from '../src/task/whenClientAuthenticatedTask';
 import { basename } from 'path';
 import { utils } from 'mocha';
@@ -13,6 +13,7 @@ import fspromise from 'fs/promises';
 import fs from 'fs';
 import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClientTask';
 import { Tunnel } from '../src/model/tunnel';
+
 
 
 chai.use(chaiHttp);
@@ -31,8 +32,8 @@ describe('CheckNotAuthenticatedClients', () => {
 
         class Mock extends CheckNotAuthenticatedClients {
             isConfiguredNetwork = false;
-            constructor(protected redisHost: string, configFilePath: string) {
-                super(redisHost, configFilePath);
+            constructor(protected redisOptions: RedisOptions, configFilePath: string) {
+                super(redisOptions, configFilePath);
                 this.redis = this.createRedisClient();
                 this.hostId = 'ahostid'
             }
@@ -61,7 +62,7 @@ describe('CheckNotAuthenticatedClients', () => {
 
 
         //execute
-        const mock = new Mock('localhost:6379', '/tmp/ferrumgate/config');
+        const mock = new Mock({ host: 'localhost:6379' }, '/tmp/ferrumgate/config');
         await mock.testRemoveFromList(key);//remove from list
         let isExists = await redis.sismember(`/tunnel/configure/${tunnel.hostId}`, key);
         expect(isExists > 0).to.be.false;

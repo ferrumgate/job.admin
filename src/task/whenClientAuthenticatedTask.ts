@@ -1,6 +1,6 @@
 /// when client connected execute this task
 
-import { RedisService } from "../../src/service/redisService";
+import { RedisOptions, RedisService } from "../../src/service/redisService";
 import { BaseTask } from "./baseTask";
 import fspromise from 'fs/promises';
 import { logger } from "../common";
@@ -8,6 +8,7 @@ import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
 import { HostBasedTask } from "./hostBasedTask";
+
 
 /**
  * when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
@@ -17,12 +18,12 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
 
     private redisSub: RedisService | null = null
     private redis: RedisService | null = null;
-    constructor(private redisHost: string, configFilePath: string) {
+    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
         super(configFilePath);
     }
 
     private createRedisClient() {
-        return new RedisService(this.redisHost);
+        return new RedisService(this.redisOptions.host, this.redisOptions.password);
     }
     private async removeFromList(tunnelId: string) {
         try {

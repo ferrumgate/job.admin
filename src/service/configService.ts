@@ -12,12 +12,12 @@ interface ConfigItem {
 export class ConfigService {
     serviceNetwork?: string;
     protected redis: RedisService | null = null;
-    constructor(protected redisHost?: string,) {
+    constructor(protected redisHost?: string, protected redisPass?: string) {
         this.createRedisClient();
 
     }
     protected createRedisClient() {
-        return new RedisService(this.redisHost);
+        return new RedisService(this.redisHost, this.redisPass);
     }
 
 

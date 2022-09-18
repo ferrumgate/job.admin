@@ -34,7 +34,7 @@ describe('whenClientAuthenticatedTask', () => {
                 await super.start();
             }
         }
-        const task = new Mock('localhost:6380', `${tmpfolder}/config`);
+        const task = new Mock({ host: 'localhost:6380' }, `${tmpfolder}/config`);
         await task.start();
         await Util.sleep(6000);//wait for 5 seconds
         expect(task.counter).to.equal(2);
@@ -59,7 +59,7 @@ describe('whenClientAuthenticatedTask', () => {
                 this.host = this.hostId;
             }
         }
-        const task = new Mock('localhost:6380', `${tmpfolder}/config`);
+        const task = new Mock({ host: 'localhost:6380' }, `${tmpfolder}/config`);
         await task.start();
         await Util.sleep(6000);//wait for 5 seconds
         expect(task.counter).to.equal(2);
@@ -81,7 +81,7 @@ describe('whenClientAuthenticatedTask', () => {
                 await super.onMessage(channel, message);
             }
         }
-        const task = new Mock('localhost:6379', `${tmpfolder}/config`);
+        const task = new Mock({ host: 'localhost:6379' }, `${tmpfolder}/config`);
         await task.start();
         const redis = new RedisService('localhost:6379');
         await redis.publish(`/tunnel/configure/1234`, 'something');

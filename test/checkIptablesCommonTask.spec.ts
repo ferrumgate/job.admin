@@ -5,7 +5,7 @@
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisOptions, RedisService } from '../src/service/redisService';
 import { WhenClientAuthenticatedTask } from '../src/task/whenClientAuthenticatedTask';
 import { basename } from 'path';
 import { utils } from 'mocha';
@@ -15,6 +15,7 @@ import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedC
 import { Tunnel } from '../src/model/tunnel';
 import { ConfigService } from '../src/service/configService';
 import { CheckIptablesCommonTask } from '../src/task/checkIptablesCommonTask';
+
 
 
 chai.use(chaiHttp);
@@ -40,8 +41,8 @@ describe('CheckIptablesCommonTask', () => {
         class Mock extends CheckIptablesCommonTask {
             isConfiguredNetwork = false;
             public isCheckCalled = false;
-            constructor(protected redisHost: string, configFilePath: string, config: ConfigService) {
-                super(redisHost, configFilePath, config);
+            constructor(protected redisOptions: RedisOptions, configFilePath: string, config: ConfigService) {
+                super(redisOptions, configFilePath, config);
 
             }
             public override async check(): Promise<void> {
@@ -53,7 +54,7 @@ describe('CheckIptablesCommonTask', () => {
 
         }
         const config = new MockConfigService('localhost:6379');
-        const task = new Mock('localhost:6379', '/tmp/ferrumgate', config);
+        const task = new Mock({ host: 'localhost:6379' }, '/tmp/ferrumgate', config);
         await task.start();
         expect(task.isCheckCalled).to.be.true;
         task.isCheckCalled = false;
