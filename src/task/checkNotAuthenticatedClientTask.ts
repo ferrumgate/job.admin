@@ -1,6 +1,6 @@
 /// when client connected execute this task
 
-import { RedisService } from "../service/redisService";
+import { RedisOptions, RedisService } from "../service/redisService";
 import { BaseTask } from "./baseTask";
 import fspromise from 'fs/promises';
 import { logger } from "../common";
@@ -19,12 +19,12 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
 
     private timer: NodeJS.Timer | null = null;
     protected redis: RedisService | null = null;
-    constructor(protected redisHost: string, configFilePath: string) {
+    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
         super(configFilePath);
     }
 
     protected createRedisClient() {
-        return new RedisService(this.redisHost);
+        return new RedisService(this.redisOptions.host, this.redisOptions.password);
     }
 
     protected async removeFromList(tunnelId: string) {

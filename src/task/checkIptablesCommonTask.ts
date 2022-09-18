@@ -1,4 +1,4 @@
-import { RedisService } from "../service/redisService";
+import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
 import { HostBasedTask } from "./hostBasedTask";
 import { NetworkService } from "../service/networkService";
@@ -13,11 +13,11 @@ export class CheckIptablesCommonTask extends HostBasedTask {
     protected timer: NodeJS.Timer | null = null;
     protected redis: RedisService | null = null;
     private lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisHost: string, configFilePath: string, protected configService: ConfigService) {
+    constructor(protected redisOptions: RedisOptions, configFilePath: string, protected configService: ConfigService) {
         super(configFilePath);
     }
     protected createRedisClient() {
-        return new RedisService(this.redisHost);
+        return new RedisService(this.redisOptions.host, this.redisOptions.password);
     }
 
     public async check() {

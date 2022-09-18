@@ -100,7 +100,7 @@ export class RedisService {
 
     private redis: IORedis.Redis | IORedis.Cluster;
 
-    constructor(private host?: string, private type: 'single' | 'cluster' | 'sentinel' = 'single') {
+    constructor(private host?: string, private password: string | undefined = undefined, private type: 'single' | 'cluster' | 'sentinel' = 'single') {
         this.redis = this.createRedisClient();
 
     }
@@ -128,6 +128,7 @@ export class RedisService {
                     host: hosts[0].host,
                     port: hosts[0].port,
                     connectTimeout: 5000,
+                    password: this.password,
                     lazyConnect: true,
                     maxRetriesPerRequest: 5
                 });
@@ -137,6 +138,7 @@ export class RedisService {
                 let sentinel = new IORedis.default({
                     sentinels: hosts,
                     connectTimeout: 5000,
+                    password: this.password,
                     lazyConnect: true,
                     maxRetriesPerRequest: 5
                 });
@@ -145,7 +147,7 @@ export class RedisService {
                 let cluster = new IORedis.Cluster(hosts, {
 
                     lazyConnect: true,
-                    redisOptions: { connectTimeout: 5000, maxRetriesPerRequest: 5 }
+                    redisOptions: { connectTimeout: 5000, maxRetriesPerRequest: 5, password: this.password }
                 });
                 return cluster;
 
@@ -282,6 +284,11 @@ export class RedisService {
     async smembers(key: string) {
         return await this.redis.smembers(key);
     }
+}
+
+export interface RedisOptions {
+    host: string,
+    password?: string
 }
 
 
