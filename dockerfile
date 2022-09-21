@@ -2,7 +2,7 @@ FROM node:16.13.2-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends iproute2 \
     iptables iputils-ping net-tools ipvsadm dnsutils iperf3 \
-    ca-certificates gnupg curl nginx tcpdump
+    ca-certificates gnupg curl nginx tcpdump procps
 RUN  apt install --assume-yes --no-install-recommends podman fuse-overlayfs
 VOLUME /var/lib/containers
 ADD https://raw.githubusercontent.com/containers/libpod/master/contrib/podmanimage/stable/containers.conf /etc/containers/containers.conf

@@ -4,7 +4,10 @@ import { NetworkService } from "./service/networkService";
 import { RedisOptions } from "./service/redisService";
 import { CheckIptablesCommonTask } from "./task/checkIptablesCommonTask";
 import { CheckNotAuthenticatedClients } from "./task/checkNotAuthenticatedClientTask";
+import { CheckTunDevicesVSIptables } from "./task/checkTunDevicesVSIptables";
+import { CheckTunDevicesVSRedis } from "./task/checkTunDevicesVSRedis";
 import { WhenClientAuthenticatedTask } from "./task/whenClientAuthenticatedTask";
+import { WhenTunnelClosed } from "./task/whenTunnelClosed";
 
 async function main() {
 
@@ -25,17 +28,35 @@ async function main() {
     const commonIptables = new CheckIptablesCommonTask(redisOptions, configPath, configService);
     await commonIptables.start();
 
-    process.on('SIGINT', async () => {
+    // check tun device to iptables
+    const iptablesInput = new CheckTunDevicesVSIptables(redisOptions, configPath);
+    await iptablesInput.start();
 
+    //check tun devices to redis
+    const redisInput = new CheckTunDevicesVSRedis(redisOptions, configPath);
+    await redisInput.start();
+
+    //follow tunnel closed events
+    const tunnelClosed = new WhenTunnelClosed(redisOptions, configPath);
+    await tunnelClosed.start();
+
+    async function stopEverything() {
         await whenClientAuthenticatedTask.stop();
         await checkNotAuthenticatedClient.stop();
+        await commonIptables.stop();
+        await iptablesInput.stop();
+        await tunnelClosed.stop();
+    }
+
+    process.on('SIGINT', async () => {
+
+        await stopEverything();
         process.exit(0);
 
     });
     process.on('SIGTERM', async () => {
 
-        await whenClientAuthenticatedTask.stop();
-        await checkNotAuthenticatedClient.stop();
+        await stopEverything();
         process.exit(0);
 
     });

@@ -284,6 +284,9 @@ export class RedisService {
     async smembers(key: string) {
         return await this.redis.smembers(key);
     }
+    async keys(pattern: string) {
+        return await this.redis.keys(pattern);
+    }
 }
 
 export interface RedisOptions {
