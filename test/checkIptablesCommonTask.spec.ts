@@ -22,7 +22,7 @@ chai.use(chaiHttp);
 const expect = chai.expect;
 
 const tmpfolder = '/tmp/ferrumtest';
-describe('CheckIptablesCommonTask', () => {
+describe('checkIptablesCommonTask', () => {
     beforeEach(async () => {
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
         await simpleRedis.flushAll();

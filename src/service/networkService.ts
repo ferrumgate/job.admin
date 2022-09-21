@@ -23,6 +23,13 @@ export class NetworkService {
 
     }
 
+    static async linkDelete(tun: string) {
+        logger.info(`link ${tun} will be delete`);
+        const log = await Util.exec(`ip link delete dev ${tun}`);
+        if (log)
+            logger.info(log);
+    }
+
     static async addRoute(tun: string, destination: string) {
         //ip route add destination dev tun
         logger.info(`adding route to ${destination} dev ${tun} `)
@@ -70,6 +77,38 @@ export class NetworkService {
                 logger.info(log)
         }
 
+    }
+
+
+    static async getTunDevices() {
+        logger.info(`getting tun devices`);
+        //ip link show type tun|grep ferrum|tr -d ' '|cut -d ':' -f2
+        let output = await Util.exec(`ip link show type tun|grep ferrum|tr -d ' '|cut -d ':' -f2`);
+        if (!output) return [];
+        let devices = (output as String).split('\n').map(x => x.trim());
+        return devices;
+    }
+
+    static async getInputTableDeviceRules() {
+        logger.info(`getting iptables INPUT chain`);
+        //iptables -S INPUT
+        let output = await Util.exec(`iptables -S INPUT`);
+        if (!output) return [];
+        let lines = (output as String).split('\n').map(x => x.trim());
+        let filtered = lines.filter(x => x.startsWith('-A')).filter(x => x.indexOf('ferrum') >= 0).filter(x => x.indexOf('ferrum+') < 0);
+        return filtered.map(x => {
+            let deviceName = x.split(' ').filter(y => y).filter(x => x.startsWith('ferrum')).find(y => y);
+            return {
+                name: deviceName, rule: x.replace('-A', '-D')
+            }
+        })
+    }
+
+    static async deleteInputTableIptables(rule: string) {
+        logger.info(`deleting input table iptables ${rule}`);
+        let output = await Util.exec(`iptables ${rule}`);
+        if (output)
+            logger.info(output);
     }
 
 
