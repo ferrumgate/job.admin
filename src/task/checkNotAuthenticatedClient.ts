@@ -40,16 +40,17 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
     protected async configureNetwork(tunnel: Tunnel) {
         // interface up and add routing
         // this code is also in WhenClientAuthenticated.ts
-        if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork) {
+        if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork && tunnel.trackId) {
             await NetworkService.linkUp(tunnel.tun);
             await NetworkService.addRoute(tunnel.tun, `${tunnel.assignedClientIp}/32`);
             await NetworkService.addToIptablesClient(tunnel.tun, tunnel.assignedClientIp);
+            await NetworkService.addToConntrackClient(tunnel.tun, tunnel.trackId)
         }
     }
     protected async configure(tunnelkey: string) {
 
         try {
-            logger.info(`late configure tunnel: ${tunnelkey} on host: ${this.hostId}`)
+            logger.info(`configure tunnel: ${tunnelkey} on host: ${this.hostId}`)
             const tunnel = await this.redis?.hgetAll(`/tunnel/id/${tunnelkey}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
@@ -103,7 +104,6 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
             logger.error(err);
         } finally {
             this.redis = null;
-
         }
     }
 }

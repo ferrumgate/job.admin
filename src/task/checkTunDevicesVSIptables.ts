@@ -28,13 +28,35 @@ export class CheckTunDevicesVSIptables extends HostBasedTask {
             if (diff > 60000) { //every 60 seconds
                 logger.info(`check iptables INPUT table to tun devices`);
                 const devices = await NetworkService.getTunDevices();
-                const rules = await NetworkService.getInputTableDeviceRules();
-                for (const rule of rules) {
+                const rulesInput = await NetworkService.getInputTableDeviceRules();
+                for (const rule of rulesInput) {
                     const device = devices.find(x => x == rule.name);
                     if (!device) {// no device is found for this rule. try to delete it
                         try {
                             logger.info(`no device found for rule ${rule.rule}`)
-                            await NetworkService.deleteInputTableIptables(rule.rule);
+                            await NetworkService.deleteTableIptables(rule.rule);
+                        } catch (ignore) { }
+                    }
+                }
+
+                const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
+                for (const rule of rulesOutput) {
+                    const device = devices.find(x => x == rule.name);
+                    if (!device) {// no device is found for this rule. try to delete it
+                        try {
+                            logger.info(`no device found for rule ${rule.rule}`)
+                            await NetworkService.deleteMangleTableIptables(rule.rule);
+                        } catch (ignore) { }
+                    }
+                }
+
+                const rulesPostrouting = await NetworkService.getManglePostroutingTableDeviceRules();
+                for (const rule of rulesOutput) {
+                    const device = devices.find(x => x == rule.name);
+                    if (!device) {// no device is found for this rule. try to delete it
+                        try {
+                            logger.info(`no device found for rule ${rule.rule}`)
+                            await NetworkService.deleteMangleTableIptables(rule.rule);
                         } catch (ignore) { }
                     }
                 }

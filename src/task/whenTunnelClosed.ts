@@ -48,12 +48,31 @@ export class WhenTunnelClosed extends HostBasedTask {
             if (tunnel.tun) {
                 // delete tunnel data from redis
                 await this.redis?.delete(`/tunnel/id/${message}`);
-                const rules = await NetworkService.getInputTableDeviceRules();
-                logger.info(`deleting iptables rule for device ${tunnel.tun}`);
-                for (const rule of rules.filter(x => x.name == tunnel.tun)) {
+                const rulesInput = await NetworkService.getInputTableDeviceRules();
+                logger.info(`deleting iptables INPUT rule for device ${tunnel.tun}`);
+                for (const rule of rulesInput.filter(x => x.name == tunnel.tun)) {
                     try {
-                        logger.info(`deleting iptables rule ${rule.rule}`)
-                        await NetworkService.deleteInputTableIptables(rule.rule);
+                        logger.info(`deleting iptables INPUT rule ${rule.rule}`)
+                        await NetworkService.deleteTableIptables(rule.rule);
+                    } catch (ignore) { }
+
+                }
+                const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
+                logger.info(`deleting iptables MANGLE OUTPUT rule for device ${tunnel.tun}`);
+                for (const rule of rulesOutput.filter(x => x.name == tunnel.tun)) {
+                    try {
+                        logger.info(`deleting iptables MANGLE OUTPUT rule ${rule.rule}`)
+                        await NetworkService.deleteMangleTableIptables(rule.rule);
+                    } catch (ignore) { }
+
+                }
+
+                const rulesPostrouting = await NetworkService.getManglePostroutingTableDeviceRules();
+                logger.info(`deleting iptables MANGLE POSTROUTING rule for device ${tunnel.tun}`);
+                for (const rule of rulesPostrouting.filter(x => x.name == tunnel.tun)) {
+                    try {
+                        logger.info(`deleting iptables MANGLE POSTROUTING rule ${rule.rule}`)
+                        await NetworkService.deleteMangleTableIptables(rule.rule);
                     } catch (ignore) { }
 
                 }
