@@ -8,7 +8,9 @@ import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
 import { HostBasedTask } from "./hostBasedTask";
-import { setInterval } from "timers";
+import { ConfigService } from "../service/configService";
+
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /**
  * when a client authenticated, system pushes info for managing, and also adds to a list
@@ -17,10 +19,10 @@ import { setInterval } from "timers";
 export class CheckNotAuthenticatedClients extends HostBasedTask {
 
 
-    private timer: NodeJS.Timer | null = null;
+    private timer: any | null = null;
     protected redis: RedisService | null = null;
-    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
-        super(configFilePath);
+    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
+        super(configService);
     }
 
     protected createRedisClient() {
@@ -37,7 +39,7 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
     }
     protected async configureNetwork(tunnel: Tunnel) {
         // interface up and add routing
-        // this code is also in whenClientAuthenticatedTask.ts
+        // this code is also in WhenClientAuthenticated.ts
         if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork) {
             await NetworkService.linkUp(tunnel.tun);
             await NetworkService.addRoute(tunnel.tun, `${tunnel.assignedClientIp}/32`);
@@ -48,10 +50,10 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
 
         try {
             logger.info(`late configure tunnel: ${tunnelkey} on host: ${this.hostId}`)
-            const tunnel = await this.redis?.hgetAll(`/tunnel/${tunnelkey}`) as Tunnel;
+            const tunnel = await this.redis?.hgetAll(`/tunnel/id/${tunnelkey}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
-            if (tunnel.tun && tunnel.authenticatedTime && tunnel.assignedClientIp && tunnel.serviceNetwork) {
+            if (tunnel.tun && tunnel.authenticatedTime && tunnel.assignedClientIp && tunnel.serviceNetwork && tunnel.trackId) {
                 const now = new Date().getTime();
                 const authenticatedTime = Date.parse(tunnel.authenticatedTime);
                 if (now - authenticatedTime >= 3 * 60 * 1000) {
@@ -86,14 +88,15 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
 
     public override  async start() {
         this.redis = this.createRedisClient();
-        this.timer = setInterval(async () => {
+        this.timer = setIntervalAsync(async () => {
             await this.check();
         }, 60 * 1000);
     }
     public override async stop() {
         try {
             if (this.timer)
-                clearInterval(this.timer);
+                await clearIntervalAsync(this.timer);
+            this.timer = null;
             await this.redis?.disconnect();
 
         } catch (err) {

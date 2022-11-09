@@ -3,18 +3,18 @@ import { logger } from "../common";
 import { HostBasedTask } from "./hostBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
-
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * check common rules in iptables
  */
 
 export class CheckIptablesCommonTask extends HostBasedTask {
 
-    protected timer: NodeJS.Timer | null = null;
+    protected timer: any | null = null;
     protected redis: RedisService | null = null;
     private lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configFilePath: string, protected configService: ConfigService) {
-        super(configFilePath);
+    constructor(protected redisOptions: RedisOptions, protected configService: ConfigService) {
+        super(configService);
     }
     protected createRedisClient() {
         return new RedisService(this.redisOptions.host, this.redisOptions.password);
@@ -27,7 +27,7 @@ export class CheckIptablesCommonTask extends HostBasedTask {
             if (diff > 30000) { //every 30 seconds
                 logger.info(`check common ip rules`);
                 await this.readHostId();
-                const serviceNet = await this.configService.getServiceNetwork();
+                const serviceNet = await this.configService.getServiceNetwork(this.hostId);
                 await NetworkService.addToIptablesCommon(serviceNet);
                 this.lastCheckTime2 = new Date().getTime();
             }
@@ -40,14 +40,15 @@ export class CheckIptablesCommonTask extends HostBasedTask {
     public override async start(): Promise<void> {
         this.redis = this.createRedisClient();
         await this.check();
-        this.timer = setInterval(async () => {
+        this.timer = setIntervalAsync(async () => {
             await this.check();
         }, 5 * 1000);
     }
     public override async stop(): Promise<void> {
         try {
             if (this.timer)
-                clearInterval(this.timer);
+                await clearIntervalAsync(this.timer);
+            this.timer = null;
             await this.redis?.disconnect();
 
         } catch (err) {

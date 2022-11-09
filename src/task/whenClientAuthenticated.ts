@@ -1,6 +1,6 @@
 /// when client connected execute this task
 
-import { RedisOptions, RedisService } from "../../src/service/redisService";
+import { RedisOptions, RedisService } from "../service/redisService";
 import { BaseTask } from "./baseTask";
 import fspromise from 'fs/promises';
 import { logger } from "../common";
@@ -8,18 +8,19 @@ import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
 import { HostBasedTask } from "./hostBasedTask";
+import { ConfigService } from "../service/configService";
 
 
 /**
  * when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
  * and this task executes interface up, and routing
  */
-export class WhenClientAuthenticatedTask extends HostBasedTask {
+export class WhenClientAuthenticated extends HostBasedTask {
 
     private redisSub: RedisService | null = null
     private redis: RedisService | null = null;
-    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
-        super(configFilePath);
+    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
+        super(configService);
     }
 
     private createRedisClient() {
@@ -40,7 +41,7 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
         let tunnelId = undefined;
         try {
             logger.info(`configure tunnel: ${message} on host: ${this.hostId}`)
-            const tunnel = await this.redis?.hgetAll(`/tunnel/${message}`) as Tunnel;
+            const tunnel = await this.redis?.hgetAll(`/tunnel/id/${message}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             tunnelId = tunnel.id;
             if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
@@ -68,7 +69,7 @@ export class WhenClientAuthenticatedTask extends HostBasedTask {
             await this.readHostId();
             this.redis = this.createRedisClient();
             this.redisSub = this.createRedisClient();
-            await this.redisSub.subsribe(`/tunnel/configure/${this.hostId}`);
+            await this.redisSub.subscribe(`/tunnel/configure/${this.hostId}`);
             await this.redisSub.onMessage(async (channel, message) => {
                 await this.onMessage(channel, message);
             });

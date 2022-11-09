@@ -3,7 +3,7 @@ import { logger } from "../common";
 import { HostBasedTask } from "./hostBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
-
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * after a tun device created, we added a new iptables rule
  * for security remove this rule if device not exits
@@ -11,11 +11,11 @@ import { ConfigService } from "../service/configService";
 
 export class CheckTunDevicesVSIptables extends HostBasedTask {
 
-    protected timer: NodeJS.Timer | null = null;
+    protected timer: any | null = null;
     protected redis: RedisService | null = null;
     protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
-        super(configFilePath);
+    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
+        super(configService);
     }
     protected createRedisClient() {
         return new RedisService(this.redisOptions.host, this.redisOptions.password);
@@ -48,14 +48,15 @@ export class CheckTunDevicesVSIptables extends HostBasedTask {
     public override async start(): Promise<void> {
         this.redis = this.createRedisClient();
         await this.check();
-        this.timer = setInterval(async () => {
+        this.timer = setIntervalAsync(async () => {
             await this.check();
         }, 30 * 1000);
     }
     public override async stop(): Promise<void> {
         try {
             if (this.timer)
-                clearInterval(this.timer);
+                await clearIntervalAsync(this.timer);
+            this.timer = null;
             await this.redis?.disconnect();
 
         } catch (err) {

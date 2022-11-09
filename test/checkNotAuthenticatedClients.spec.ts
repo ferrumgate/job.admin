@@ -6,13 +6,14 @@ import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
 import { RedisOptions, RedisService } from '../src/service/redisService';
-import { WhenClientAuthenticatedTask } from '../src/task/whenClientAuthenticatedTask';
+import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
 import { basename } from 'path';
 import { utils } from 'mocha';
 import fspromise from 'fs/promises';
 import fs from 'fs';
-import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClientTask';
+import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
 import { Tunnel } from '../src/model/tunnel';
+import { ConfigService } from '../src/service/configService';
 
 
 
@@ -26,14 +27,16 @@ describe('checkNotAuthenticatedClients', () => {
         await simpleRedis.flushAll();
         if (fs.existsSync(tmpfolder))
             await fs.rmSync(tmpfolder, { recursive: true, force: true });
+        fs.writeFileSync('/tmp/config', 'host=123')
     })
 
     it('configure', async () => {
 
+        const configService = new ConfigService('/tmp/config');
         class Mock extends CheckNotAuthenticatedClients {
             isConfiguredNetwork = false;
             constructor(protected redisOptions: RedisOptions, configFilePath: string) {
-                super(redisOptions, configFilePath);
+                super(redisOptions, configService);
                 this.redis = this.createRedisClient();
                 this.hostId = 'ahostid'
             }
@@ -55,9 +58,9 @@ describe('checkNotAuthenticatedClients', () => {
         const tunnel: Tunnel = {
             id: key, tun: 'tun0', assignedClientIp: '1.2.3.4',
             authenticatedTime: new Date().toISOString(), clientIp: '3.4.5.6',
-            hostId: 'ahostid', serviceNetwork: '172.10.0.0/16', userId: '12'
+            hostId: 'ahostid', serviceNetwork: '172.10.0.0/16', userId: '12', trackId: 3
         }
-        await redis.hset(`/tunnel/${key}`, tunnel);
+        await redis.hset(`/tunnel/id/${key}`, tunnel);
         await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
 
 
@@ -70,7 +73,7 @@ describe('checkNotAuthenticatedClients', () => {
 
         //change time to 4 minutes before
         tunnel.authenticatedTime = new Date(new Date().getTime() - 4 * 60 * 1000).toISOString();
-        await redis.hset(`/tunnel/${key}`, tunnel);
+        await redis.hset(`/tunnel/id/${key}`, tunnel);
         //add again
         await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
         await mock.testConfigure(key);
@@ -83,7 +86,7 @@ describe('checkNotAuthenticatedClients', () => {
 
         //change time to 2 minutes before
         tunnel.authenticatedTime = new Date(new Date().getTime() - 2 * 60 * 1000).toISOString();
-        await redis.hset(`/tunnel/${key}`, tunnel);
+        await redis.hset(`/tunnel/id/${key}`, tunnel);
         //add again
         await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
         await mock.testConfigure(key);

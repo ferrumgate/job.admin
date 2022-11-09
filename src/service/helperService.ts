@@ -4,6 +4,7 @@ export class HelperService {
     /**
     * @summary check if tunnel session is valid
     * @param ses 
+    * @remark this code comes from rest.portal
     */
     static isValidTunnel(tun: Tunnel | undefined) {
         if (!tun)
@@ -13,6 +14,8 @@ export class HelperService {
             throw new Error('tunnel is not valid, no authenticatedTime');
         if (!tun.tun)
             throw new Error('tunnel is not valid, no tun');
+        if (!tun.trackId)
+            throw new Error('tunnel is not valid, no trackId');
         if (!tun.userId)
             throw new Error('tunnel is not valid, no user');
         if (!tun.assignedClientIp)

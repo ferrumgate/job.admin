@@ -8,6 +8,7 @@ import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
 import { HostBasedTask } from "./hostBasedTask";
+import { ConfigService } from "../service/configService";
 
 
 /**
@@ -18,8 +19,8 @@ export class WhenTunnelClosed extends HostBasedTask {
 
     protected redisSub: RedisService | null = null
     protected redis: RedisService | null = null;
-    constructor(protected redisOptions: RedisOptions, configFilePath: string) {
-        super(configFilePath);
+    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
+        super(configService);
     }
 
     protected createRedisClient() {
@@ -40,13 +41,13 @@ export class WhenTunnelClosed extends HostBasedTask {
         let tunnelId = undefined;
         try {
             logger.info(`tunnel closed ${message}`)
-            const tunnel = await this.redis?.hgetAll(`/tunnel/${message}`) as Tunnel;
+            const tunnel = await this.redis?.hgetAll(`/tunnel/id/${message}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             tunnelId = tunnel.id;
             if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
             if (tunnel.tun) {
                 // delete tunnel data from redis
-                await this.redis?.delete(`/tunnel/${message}`);
+                await this.redis?.delete(`/tunnel/id/${message}`);
                 const rules = await NetworkService.getInputTableDeviceRules();
                 logger.info(`deleting iptables rule for device ${tunnel.tun}`);
                 for (const rule of rules.filter(x => x.name == tunnel.tun)) {
@@ -72,7 +73,7 @@ export class WhenTunnelClosed extends HostBasedTask {
             await this.readHostId();
             this.redis = this.createRedisClient();
             this.redisSub = this.createRedisClient();
-            await this.redisSub.subsribe(`/tunnel/closed/${this.hostId}`);
+            await this.redisSub.subscribe(`/tunnel/closed/${this.hostId}`);
             await this.redisSub.onMessage(async (channel, message) => {
                 await this.onMessage(channel, message);
             });
