@@ -23,14 +23,13 @@ export class CheckIptablesCommonTask extends HostBasedTask {
     public async check() {
 
         try {
-            const diff = new Date().getTime() - this.lastCheckTime2;
-            if (diff > 30000) { //every 30 seconds
-                logger.info(`check common ip rules`);
-                await this.readHostId();
-                const serviceNet = await this.configService.getServiceNetwork(this.hostId);
-                await NetworkService.addToIptablesCommon(serviceNet);
-                this.lastCheckTime2 = new Date().getTime();
-            }
+            //every 30 seconds
+            logger.info(`check common ip rules`);
+            await this.readHostId();
+            const serviceNet = await this.configService.getServiceNetwork(this.hostId);
+            await NetworkService.addToIptablesCommon(serviceNet);
+            this.lastCheckTime2 = new Date().getTime();
+
         } catch (err) {
             logger.error(err);
         }
@@ -42,7 +41,7 @@ export class CheckIptablesCommonTask extends HostBasedTask {
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
-        }, 5 * 1000);
+        }, 30 * 1000);
     }
     public override async stop(): Promise<void> {
         try {

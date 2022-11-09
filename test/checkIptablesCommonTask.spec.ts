@@ -60,7 +60,7 @@ describe('checkIptablesCommonTask', () => {
         await task.start();
         expect(task.isCheckCalled).to.be.true;
         task.isCheckCalled = false;
-        await Util.sleep(10000);
+        await Util.sleep(40000);
         expect(task.isCheckCalled).to.be.true;
 
 

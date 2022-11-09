@@ -16,7 +16,7 @@ async function main() {
     const redisPassword = process.env.REDIS_PASS;
     const redisOptions: RedisOptions = { host: redisHost, password: redisPassword };
     const configPath = '/etc/ferrumgate/config';
-    const configService = new ConfigService(configPath, redisHost);
+    const configService = new ConfigService(configPath, redisHost, redisPassword);
     await configService.start();
     // i am alive
     const iAmAlive = new IAmAlive(redisOptions, configService);

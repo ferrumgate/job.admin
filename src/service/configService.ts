@@ -124,7 +124,7 @@ export class ConfigService {
             }
             let timer = setTimeout(() => {
                 this.requestList.delete(msg.id);
-                resolve({ id: msg.id, isError: true, error: 'timeout occured' });
+                resolve({ id: msg.id, isError: true, error: `timeout occured ${msg.id}: ${msg.func}` });
             }, timeout);
             this.eventEmitter.on('data', onData)
         })
@@ -145,7 +145,7 @@ export class ConfigService {
             params: [hostId]
         }
         const request = await this.createRequest(msg);
-        await this.redis?.publish(this.redisPublish, Buffer.from(JSON.stringify(msg).toString(), 'base64').toString());
+        await this.redis?.publish(this.redisPublish, Buffer.from(JSON.stringify(msg)).toString('base64'));
         const response = await request.promise;
         if (response.isError) {
             throw new Error(response.error);
