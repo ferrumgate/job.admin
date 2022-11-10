@@ -14,7 +14,7 @@ import fs from 'fs';
 import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
 import { Tunnel } from '../src/model/tunnel';
 import { ConfigService } from '../src/service/configService';
-import { CheckIptablesCommon } from '../src/task/checkIptablesCommonTask';
+import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
 
 
 
@@ -34,9 +34,7 @@ describe('checkIptablesCommonTask', () => {
     it('start', async () => {
 
         class MockConfigService extends ConfigService {
-            override async getServiceNetwork(): Promise<string> {
-                return '172.16.0.1';
-            }
+
         }
 
         class Mock extends CheckIptablesCommon {

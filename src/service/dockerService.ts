@@ -2,19 +2,19 @@ import { Util } from "../util";
 import { Service } from "../model/service";
 import { NetworkService } from "./networkService";
 import { logger } from "../common";
+import { util } from "chai";
 
 export interface Pod {
-    name: string;
+    id: string, image: string, name: string;
 }
 
-export class PodmanService {
+export class DockerService {
 
+    //security check, input from outer
     normalizeName(str: string) {
         return str.replace(/[^a-z0-9]/gi, '');
     }
-    getRunning() {
 
-    }
     getEnv(svc: Service) {
         if (!svc.protocol || svc.protocol == 'raw') {
 
@@ -52,16 +52,18 @@ ${tcp_listen} ${udp_listen}
     async exec(cmd: string) {
         const log = await Util.exec(cmd)
         if (log)
-            logger.error(log);
+            logger.info(log);
     }
     async ipAddr(svc: Service) {
         await NetworkService.ipAddr('lo', svc.assignedIp);
     }
-    async run(svc: Service) {
+    async run(svc: Service, network?: string) {
+        logger.info(`starting ferrum service ${svc.name}`)
+        let net = network ? `--net=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
         let command = `
-podman run --cap-add=NET_ADMIN --rm --restart=no --net=host --name ${svc.name.toLowerCase()}-${svc.id} 
+docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumsvc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)} 
 -d ${this.getEnv(svc)}
 ${this.getHostServiceInstanceId()}
 ${image}`
@@ -69,10 +71,27 @@ ${image}`
         await this.exec(command);
         return command;
     }
-    isRunning(svc: Service) {
 
+    async getAllRunning(): Promise<Pod[]> {
+        logger.info(`get all running pods`);
+        const output = await Util.exec(`docker ps --no-trunc  --filter status=running --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
+        const rows = output.split('\n').map(x => x.trim()).filter(x => x);
+        return rows.map(x => {
+            const tmp = x.split(' ');
+            return {
+                id: tmp[0], image: tmp[1], name: tmp[2]
+            }
+        })
 
     }
+
+    async stop(pod: Pod) {
+        logger.info(`stoping ferrum service ${pod.name}:${pod.id}`);
+        const log = await Util.exec(`docker stop ${pod.id}`);
+        if (log)
+            logger.info(log);
+    }
+
 
 
 }

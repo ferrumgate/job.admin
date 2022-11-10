@@ -26,6 +26,8 @@ describe('configService', () => {
     beforeEach(async () => {
         const simpleRedis = new RedisService('localhost:6379');
         await simpleRedis.flushAll();
+        if (fs.existsSync('/tmp/abc'))
+            fs.unlinkSync('/tmp/abc');
 
     })
 
@@ -50,6 +52,24 @@ describe('configService', () => {
         await config.stop();
 
     }).timeout(100000)
+
+    it('execute', async () => {
+        const simpleRedis = new RedisService('localhost:6379');
+        const simpleRedis2 = new RedisService('localhost:6379');
+        fs.writeFileSync('/tmp/abc', 'host=123');
+        const config = new ConfigService('/tmp/abc', 'localhost:6379');
+        await simpleRedis.onMessage(async () => {
+            let item = { id: '1', result: 'test' };
+            return simpleRedis2.xadd('/query/host/123', { data: Buffer.from(JSON.stringify(item)).toString('base64') });
+        })
+        await simpleRedis.subscribe('/query/config');
+        await config.start();
+        const response = await config.execute<string>({ id: '1', func: 'getSomething', hostId: '1', params: ['1'] });
+        await Util.sleep(1000);
+        expect(response).to.equal('test');
+        await config.stop();
+
+    }).timeout(10000)
 
     it('listenStream', async () => {
         const simpleRedis = new RedisService('localhost:6379');

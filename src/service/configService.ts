@@ -4,6 +4,9 @@ import fsp from 'fs/promises';
 import { timeStamp } from "console";
 import { logger } from "../common";
 import { EventEmitter } from "stream";
+import { Gateway } from "../model/network";
+import { Network } from "../model/network";
+import { Service } from "../model/service";
 
 /**
  * @summary config query over messages
@@ -36,6 +39,7 @@ interface RequestItem {
  * get config from portal over redis
  */
 export class ConfigService {
+
     eventEmitter = new EventEmitter;
 
     private redisPublish = `/query/config`;
@@ -134,24 +138,64 @@ export class ConfigService {
         this.requestList.set(msg.id, item)
         return item;
     }
-    async getServiceNetwork(hostId: string) {
+
+    async execute<T>(msg: ConfigRequest) {
         await this.readHostId();
         if (!this.hostId)
             throw new Error(`hostId not found`);
-        let msg: ConfigRequest = {
-            id: Util.randomNumberString(),
-            hostId: this.hostId,
-            func: 'getServiceNetworkByGatewayId',
-            params: [hostId]
-        }
+
         const request = await this.createRequest(msg);
         await this.redis?.publish(this.redisPublish, Buffer.from(JSON.stringify(msg)).toString('base64'));
         const response = await request.promise;
         if (response.isError) {
             throw new Error(response.error);
         }
-        return response.result as string;
+        return response.result as T;
+    }
 
+
+    /// this func name comes from rest.portal configPublicListener
+    async getGatewayById() {
+        let msg: ConfigRequest = {
+            id: Util.randomNumberString(),
+            hostId: this.hostId,
+            func: 'getGatewayById',
+            params: [this.hostId]
+        }
+        return await this.execute<Gateway | null>(msg);
+
+    }
+    async getNetworkByGatewayId() {
+        let msg: ConfigRequest = {
+            id: Util.randomNumberString(),
+            hostId: this.hostId,
+            func: 'getNetworkByGatewayId',
+            params: [this.hostId]
+        }
+        return await this.execute<Network | null>(msg);
+
+    }
+
+
+    async getServicesByGatewayId() {
+        let msg: ConfigRequest = {
+            id: Util.randomNumberString(),
+            hostId: this.hostId,
+            func: 'getServicesByGatewayId',
+            params: [this.hostId]
+        }
+        return await this.execute<Service[]>(msg);
+
+    }
+
+    async getService(id: string) {
+        let msg: ConfigRequest = {
+            id: Util.randomNumberString(),
+            hostId: this.hostId,
+            func: 'getService',
+            params: [id]
+        }
+        return await this.execute<Service[]>(msg);
     }
 
 }

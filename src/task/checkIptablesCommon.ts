@@ -26,8 +26,34 @@ export class CheckIptablesCommon extends HostBasedTask {
             //every 30 seconds
             logger.info(`check common ip rules`);
             await this.readHostId();
-            const serviceNet = await this.configService.getServiceNetwork(this.hostId);
-            await NetworkService.addToIptablesCommon(serviceNet);
+            const currentGateway = await this.configService.getGatewayById();
+            if (!currentGateway) {
+                logger.error(`current gateway not found ${this.hostId}`);
+                await NetworkService.blockToIptablesCommon();
+                return;
+            }
+            if (!currentGateway.isEnabled) {
+                logger.error(`current gateway disabled ${this.hostId}`);
+                await NetworkService.blockToIptablesCommon();
+                return;
+            }
+            const network = await this.configService.getNetworkByGatewayId();
+            if (!network) {
+                logger.error(`current network not found for gateway ${this.hostId}`);
+                await NetworkService.blockToIptablesCommon();
+                return;
+            }
+            if (!network.isEnabled) {
+                logger.error(`current network disabled for gateway ${this.hostId}`);
+                await NetworkService.blockToIptablesCommon();
+                return;
+            }
+            if (!network.serviceNetwork) {
+                logger.error(`service network is not valid for gateway ${this.hostId}`);
+                await NetworkService.blockToIptablesCommon();
+                return;
+            }
+            await NetworkService.addToIptablesCommon(network.serviceNetwork);
             this.lastCheckTime2 = new Date().getTime();
 
         } catch (err) {

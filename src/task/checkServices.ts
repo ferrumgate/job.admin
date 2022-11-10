@@ -3,52 +3,126 @@ import { logger } from "../common";
 import { HostBasedTask } from "./hostBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
+import { Service } from "../model/service";
+import { ConfigEvent } from "../model/configEvent";
+import { DockerService, Pod } from "../service/dockerService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
  * delete tun device
  */
+export interface ServiceEx extends Service {
+
+}
 
 export class CheckServices extends HostBasedTask {
 
-    protected timer: any | null = null;
-    protected redis: RedisService | null = null;
-    protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
+
+    protected timerCheck: any | null = null;
+    protected redisListen: RedisService | null = null;
+
+    constructor(protected redisOptions: RedisOptions, configService: ConfigService,
+        protected dockerService: DockerService) {
         super(configService);
     }
     protected createRedisClient() {
         return new RedisService(this.redisOptions.host, this.redisOptions.password);
     }
-    private async removeFromList(tunnelId: string) {
-        try {
-            //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnelId);
-        } catch (ignored) {
-            logger.error(ignored);
+    public async closeAllServices() {
+        const services = await this.dockerService.getAllRunning();
+        for (const svc of services) {
+            if (svc.name.startsWith('ferrumsvc'))
+                await this.dockerService.stop(svc)
         }
     }
+    public async closeService(pod: Pod) {
+        await this.dockerService.stop(pod);
+    }
+    private lastCheck = 0;
+    public resetLastCheck() {
+        this.lastCheck = 0;
+    }
 
-    public async check() {
+    public async checkServices() {
 
         try {
-            const diff = new Date().getTime() - this.lastCheckTime2;
-            if (diff > 60000) { //every 60 seconds
-                logger.info(`check tun devices to redis`);
-                await this.readHostId();
-                const devices = await NetworkService.getTunDevices();
-                for (const device of devices) {
-                    if (this.hostId && device) {
-                        const tunnelKey = await this.redis?.get(`/host/${this.hostId}/tun/${device}`, false) as string
-                        if (!tunnelKey) {//there is a problem delete tun device
-                            logger.info(`deleting device ${device} not exits on host ${this.hostId}`);
-                            await NetworkService.linkDelete(device);
+            let now = new Date().getTime();
+            if (this.lastCheck + 30000 > now)
+                return;
+            this.lastCheck = now;
+            logger.info(`checking all services`);
+            await this.readHostId();
 
-                        }
-                    }
-                }
+            const currentGateway = await this.configService.getGatewayById();
+            if (!currentGateway) {
+                logger.error(`current gateway not found ${this.hostId}`);
+                await this.closeAllServices();
+                return;
             }
+            if (!currentGateway.isEnabled) {
+                logger.error(`current gateway disabled ${this.hostId}`);
+                await this.closeAllServices();
+                return;
+            }
+            const network = await this.configService.getNetworkByGatewayId();
+            if (!network) {
+                logger.error(`current network not found for gateway ${this.hostId}`);
+                await this.closeAllServices();
+                return;
+            }
+            if (!network.isEnabled) {
+                logger.error(`current network disabled for gateway ${this.hostId}`);
+                await this.closeAllServices();
+                return;
+            }
+            if (!network.serviceNetwork) {
+                logger.error(`service network is not valid for gateway ${this.hostId}`);
+                await this.closeAllServices();
+                return;
+            }
+
+            const services = await this.configService.getServicesByGatewayId();
+            const running = await this.dockerService.getAllRunning();
+            await this.compare(running.filter(x => x.name.includes('ferrumsvc')), services);
+
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+    async compare(running: Pod[], services: Service[]) {
+        for (const run of running) {//check running services that must stop
+
+            const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
+            if (serviceId) {
+                const service = services.find(x => x.id == serviceId)
+                if (!service || !service.isEnabled)
+                    await this.dockerService.stop(run);
+            }
+        }
+        const secureserver = running.find(x => x.name.includes('secure.server'));
+        if (!secureserver) {
+            throw new Error(`secure server pod not running`);
+        }
+        for (const svc of services.filter(x => x.isEnabled)) {
+            const run = running.find(x => x.name.startsWith('ferrumsvc') && x.name.includes(`-${svc.id}-`))
+            if (!run) {//not running 
+                logger.info(`not running service found ${svc.name}`);
+                await this.dockerService.run(svc, `container:${secureserver.id}`);
+            }
+        }
+
+
+    }
+
+    public async onConfigChanged(chan: string, msg: string) {
+        try {
+            logger.info(`config changed ${msg}`);
+            const event: ConfigEvent = JSON.parse(msg) as ConfigEvent;
+            if (event.path.startsWith('/services') || event.path.startsWith('gateways') || event.path.startsWith('networks')) {
+                await this.checkServices();
+            }
+
         } catch (err) {
             logger.error(err);
         }
@@ -56,24 +130,35 @@ export class CheckServices extends HostBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
-        await this.check();
-        this.timer = setIntervalAsync(async () => {
-            await this.check();
-        }, 30 * 1000);
+        try {
+            this.redisListen = this.createRedisClient();
+            await this.redisListen.subscribe('/config/changed');
+            await this.redisListen.onMessage(async (channel: string, msg: string) => {
+                await this.onConfigChanged(channel, msg);
+            });
+            await this.checkServices();
+            this.timerCheck = setIntervalAsync(async () => {
+                await this.checkServices();
+            }, 30 * 1000);
+        } catch (err) {
+            logger.error(err);
+            setTimeout(async () => {
+                await this.stop();
+                await this.start();
+            }, 5000);//try again 5 seconds
+        }
     }
     public override async stop(): Promise<void> {
         try {
-            if (this.timer)
-                await clearIntervalAsync(this.timer);
-            this.timer = null;
-            await this.redis?.disconnect();
+            if (this.timerCheck)
+                await clearIntervalAsync(this.timerCheck);
+            this.timerCheck = null;
+            await this.redisListen?.disconnect();
 
         } catch (err) {
             logger.error(err);
         } finally {
-            this.redis = null;
-
+            this.redisListen = null;
         }
     }
 

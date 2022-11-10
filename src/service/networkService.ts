@@ -92,6 +92,20 @@ export class NetworkService {
      * @param destinationNetwork 
      */
     static async addToIptablesCommon(destinationNetwork: string) {
+
+        //-A INPUT -i ferrum+ -j DROP
+        //check if drop all exits
+        logger.info(`check iptables ferrum+ rules in INPUT all DROP`);
+        let tunAllCountStr = await Util.exec(`iptables -nvL INPUT|grep 'ferrum+ -j DROP'|wc -l`);
+        let tunAllCount = Number(tunAllCountStr);
+
+        if (tunAllCount) {
+            logger.info(`no rule for ferrum+ INPUT all DROP`);
+            let log = await Util.exec(`iptables -D INPUT -i ferrum+ -j DROP`);
+            if (log)
+                logger.info(log)
+        }
+        // check input and forward tables
         logger.info(`check iptables ferrum+ rules in INPUT and FORWARD`);
         let tunCountStr = await Util.exec(`iptables -nvL INPUT|grep ferrum+|wc -l`);
         let tunCount = Number(tunCountStr);
@@ -129,6 +143,20 @@ export class NetworkService {
         if (tunCount == 0) {
             logger.info(`no rule for ferrum+ FORWARD`);
             let log = await Util.exec(`iptables -A FORWARD -i ferrum+  ! -d ${destinationNetwork} -j DROP`);
+            if (log)
+                logger.info(log)
+        }
+
+    }
+    static async blockToIptablesCommon() {
+        //-A INPUT -i ferrum+ -j DROP
+        logger.info(`check iptables ferrum+ rules in INPUT all DROP`);
+        let tunCountStr = await Util.exec(`iptables -nvL INPUT|grep 'ferrum+ -j DROP'|wc -l`);
+        let tunCount = Number(tunCountStr);
+
+        if (tunCount == 0) {
+            logger.info(`no rule for ferrum+ INPUT all DROP`);
+            let log = await Util.exec(`iptables -A INPUT -i ferrum+ -j DROP`);
             if (log)
                 logger.info(log)
         }
