@@ -14,7 +14,7 @@ import fs from 'fs';
 import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
 import { Tunnel } from '../src/model/tunnel';
 import { ConfigService } from '../src/service/configService';
-import { CheckIptablesCommonTask } from '../src/task/checkIptablesCommonTask';
+import { CheckIptablesCommon } from '../src/task/checkIptablesCommonTask';
 import { NetworkService } from '../src/service/networkService';
 import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
 

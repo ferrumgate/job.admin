@@ -2,7 +2,7 @@ import { logger } from "./common"
 import { ConfigService } from "./service/configService";
 import { NetworkService } from "./service/networkService";
 import { RedisOptions } from "./service/redisService";
-import { CheckIptablesCommonTask } from "./task/checkIptablesCommonTask";
+import { CheckIptablesCommon } from "./task/checkIptablesCommonTask";
 import { CheckNotAuthenticatedClients } from "./task/checkNotAuthenticatedClient";
 import { CheckTunDevicesVSIptables } from "./task/checkTunDevicesVSIptables";
 import { CheckTunDevicesVSRedis } from "./task/checkTunDevicesVSRedis";
@@ -31,7 +31,7 @@ async function main() {
     await checkNotAuthenticatedClient.start();
 
     // check common iptables rules
-    const commonIptables = new CheckIptablesCommonTask(redisOptions, configService);
+    const commonIptables = new CheckIptablesCommon(redisOptions, configService);
     await commonIptables.start();
 
     // check tun device to iptables

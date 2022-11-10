@@ -17,6 +17,11 @@ RUN mkdir -p /var/lib/shared/overlay-images /var/lib/shared/overlay-layers /var/
 ENV _CONTAINERS_USERNS_CONFIGURED=""
 #Create app directory
 WORKDIR /usr/src/app
+#RUN touch /etc/containers/registries.conf.d/myregistry.conf
+RUN echo "unqualified-search-registries = ['docker.io', 'quay.io', 'registry.ferrumgate.local']" >> /etc/containers/registries.conf
+RUN echo "[[registry]]" >> /etc/containers/registries.conf
+RUN echo "location=\"registry.ferrumgate.local\"" >> /etc/containers/registries.conf
+RUN echo "insecure=true" >> /etc/containers/registries.conf
 
 
 

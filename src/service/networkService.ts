@@ -3,6 +3,18 @@ import { Util } from "../util";
 
 
 export class NetworkService {
+
+    static async ipAddr(int: string, ip: string) {
+        logger.info(`setting ip to interface`);
+        const exits = await Util.exec(`ip a|grep ${ip}|wc -l`)
+        if (exits == '0') {
+            if (ip.includes(`/`))
+                ip += '/32';
+            const log = await Util.exec(`ip addr add ${ip} dev ${int}`)
+            if (log)
+                logger.info(log);
+        }
+    }
     static async linkUp(tun: string) {
 
         logger.info(`link ${tun} will up`)
@@ -91,7 +103,7 @@ export class NetworkService {
             logger.info("service network changed to " + destinationNetwork);
             let rule = await Util.exec(`iptables -S INPUT|grep ferrum+`) as string;
             rule = rule.replace('-A', '-D')
-            await Util.exec(`iptables -D ${rule}`);
+            await Util.exec(`iptables ${rule}`);
             tunCount = 0;
         }
         if (tunCount == 0) {
@@ -110,7 +122,7 @@ export class NetworkService {
             logger.info("service network changed to " + destinationNetwork);
             let rule = await Util.exec(`iptables -S FORWARD|grep ferrum+`) as string;
             rule = rule.replace('-A', '-D')
-            await Util.exec(`iptables -D ${rule}`);
+            await Util.exec(`iptables ${rule}`);
             tunCount = 0;
         }
 

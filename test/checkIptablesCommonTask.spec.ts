@@ -14,7 +14,7 @@ import fs from 'fs';
 import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
 import { Tunnel } from '../src/model/tunnel';
 import { ConfigService } from '../src/service/configService';
-import { CheckIptablesCommonTask } from '../src/task/checkIptablesCommonTask';
+import { CheckIptablesCommon } from '../src/task/checkIptablesCommonTask';
 
 
 
@@ -39,7 +39,7 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
-        class Mock extends CheckIptablesCommonTask {
+        class Mock extends CheckIptablesCommon {
             isConfiguredNetwork = false;
             public isCheckCalled = false;
             constructor(protected redisOptions: RedisOptions, config: ConfigService) {

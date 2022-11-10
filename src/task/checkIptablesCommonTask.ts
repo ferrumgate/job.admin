@@ -8,7 +8,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * check common rules in iptables
  */
 
-export class CheckIptablesCommonTask extends HostBasedTask {
+export class CheckIptablesCommon extends HostBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;
