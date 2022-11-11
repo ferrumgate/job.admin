@@ -79,7 +79,7 @@ describe('dockerService', () => {
             }
         }
         const docker = new Mock();
-        const result = await docker.run(svc, 'host');
+        const result = await docker.run(svc, '231a0932', 'host');
         expect(docker.ip).to.equal('an ip');
         expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name mysql-dev-3KoOOLwzfUeX5FCu  -d  -e LOG_LEVEL=INFO -e REDIS_HOST=localhost:6379   -e REDIS_LOCAL_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=1.3 -e RAW_LISTEN_TCP_PORT=3306    -e HOST_ID=hostId -e SERVICE_ID=serviceId -e'))
 
@@ -125,7 +125,7 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
         const svc = createSampleData();
         const docker = new Mock();
         process.env.FERRUM_IMAGE = 'nginx'
-        await docker.run(svc, 'host');
+        await docker.run(svc, '231a0932', 'host');
         delete process.env.FERRUM_IMAGE;
         const pods = await docker.getAllRunning();
         const pod = pods.find(x => x.name.includes('ferrumsvc'));

@@ -32,7 +32,7 @@ describe('rootPermissions', () => {
     it('check', async () => {
         let ip = '1.2.3.4';
         const exits = await Util.exec(`ip a|grep ${ip}|wc -l`)
-        expect(exits).to.equal('0');
+        expect(exits).to.equal('0\n');
 
     })
 })

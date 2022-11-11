@@ -88,7 +88,7 @@ export class CheckServices extends HostBasedTask {
         }
     }
     async compare(running: Pod[], services: Service[]) {
-
+        await this.readHostId();
         for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
@@ -109,7 +109,7 @@ export class CheckServices extends HostBasedTask {
             if (!run) {//not running 
                 logger.info(`not running service found ${svc.name}`);
                 try {
-                    await this.dockerService.run(svc, `container:${secureserver.id}`);
+                    await this.dockerService.run(svc, this.hostId, `container:${secureserver.id}`);
                 } catch (ignore: any) {
                     logger.error(ignore);
                 }

@@ -89,7 +89,7 @@ describe('checkServices', () => {
         const configService = new ConfigService(configFilePath, redisoption.host);
         const checkservices = new CheckServices(redisoption, configService, docker);
 
-        await docker.run(service);
+        await docker.run(service, '231a0932', 'host');
         await checkservices.closeAllServices();
         const pods = await docker.getAllRunning();
         expect(pods.find(x => x.name.includes('ferrumsvc'))).to.be.undefined;
@@ -202,7 +202,7 @@ describe('checkServices', () => {
         }
         await Util.exec("docker run -d --rm --name secure.server nginx");
         //start 1 services
-        await docker.run(service);
+        await docker.run(service, 'abc', 'host');
 
         const runnings = await docker.getAllRunning();
         await checkservices.compare(runnings, [service]);
@@ -214,8 +214,8 @@ describe('checkServices', () => {
         // start 2 services, 1 of them will be stoped
         const service2 = JSON.parse(JSON.stringify(service));
         service2.id = '15';
-        await docker.run(service);
-        await docker.run(service2);
+        await docker.run(service, '231a0932', 'host');
+        await docker.run(service2, '231a0932', 'host');
 
         const runnings3 = await docker.getAllRunning();
         await checkservices.compare(runnings3, [service]);

@@ -42,10 +42,10 @@ ${tcp_listen} ${udp_listen}
         }
         return '';
     }
-    getHostServiceInstanceId() {
+    getHostServiceInstanceId(hostId: string, svc: Service) {
         let env = `
--e HOST_ID=${process.env.HOST_ID || 'hostId'}
--e SERVICE_ID=${process.env.SERVICE_ID || 'serviceId'}
+-e HOST_ID=${hostId}
+-e SERVICE_ID=${svc.id}
 -e INSTANCE_ID=${Util.randomNumberString(16)}`
         return env.replace(/\n/g, ' ');
     }
@@ -58,7 +58,7 @@ ${tcp_listen} ${udp_listen}
     async ipAddr(svc: Service) {
         await NetworkService.ipAddr('lo', svc.assignedIp);
     }
-    async run(svc: Service, network?: string) {
+    async run(svc: Service, hostId: string, network: string) {
         logger.info(`starting ferrum service ${svc.name}`)
         let net = network ? `--net=${network}` : '';
         await this.ipAddr(svc);
@@ -66,11 +66,11 @@ ${tcp_listen} ${udp_listen}
         let command = `
 docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumsvc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)} 
 -d ${this.getEnv(svc)}
-${this.getHostServiceInstanceId()}
+${this.getHostServiceInstanceId(hostId, svc)}
 ${image}`
         command = command.replace(/\n/g, ' ');
-        if (process.env.LOG_LEVEL?.toLowerCase() == 'debug')
-            logger.info(command);
+
+        logger.debug(command);
         await this.exec(command);
         return command;
     }
