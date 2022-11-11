@@ -119,7 +119,7 @@ describe('checkServices', () => {
         configService.getGatewayById = async () => {
             return null;
         }
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -129,7 +129,7 @@ describe('checkServices', () => {
         configService.getGatewayById = async () => {
             return gateway;
         }
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -142,7 +142,7 @@ describe('checkServices', () => {
             return null;
         }
 
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -154,7 +154,7 @@ describe('checkServices', () => {
             return network;
         }
 
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -163,7 +163,7 @@ describe('checkServices', () => {
         closeAllCalled = false;
         network.serviceNetwork = '';
 
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -180,7 +180,7 @@ describe('checkServices', () => {
         checkservices.compare = async () => {
             compareCalled = true;
         }
-        checkservices.resetLastCheck();
+
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.false;
 
@@ -195,9 +195,9 @@ describe('checkServices', () => {
 
         const configService = new ConfigService(configFilePath, redisoption.host);
         const checkservices = new CheckServices(redisoption, configService, docker);
-        const isWorking = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
-        console.log(isWorking);
-        if (isWorking.replace('\n', '') !== '0') {
+        const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
+        const isWorking = Number(isWorkingStr);
+        if (isWorking) {
             await Util.exec(`docker stop secure.server`);
         }
         await Util.exec("docker run -d --rm --name secure.server nginx");

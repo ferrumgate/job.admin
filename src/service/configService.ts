@@ -7,6 +7,7 @@ import { EventEmitter } from "stream";
 import { Gateway } from "../model/network";
 import { Network } from "../model/network";
 import { Service } from "../model/service";
+import { ConfigEvent } from "../model/configEvent";
 
 /**
  * @summary config query over messages
@@ -45,6 +46,7 @@ export class ConfigService {
     private redisPublish = `/query/config`;
     protected redis: RedisService | null = null;
     protected redisStream: RedisService | null = null;
+    protected redisListen: RedisService | null = null;
     private hostId = '';
     private isWorking = false;
     private streamPos = '$';
@@ -98,6 +100,7 @@ export class ConfigService {
                 }
             } catch (err) {
                 logger.error(err);
+                await Util.sleep(1000);
             }
         }
     }
@@ -105,14 +108,46 @@ export class ConfigService {
         setImmediate(async () => {
 
             this.isWorking = true;
+            await this.listenConfig();
             await this.listenStream();
 
         })
 
     }
+    public async onConfigChanged(chan: string, msg: string) {
+        try {
+            logger.info(`config changed ${msg}`);
+            const event: ConfigEvent = JSON.parse(msg) as ConfigEvent;
+
+            await this.eventEmitter.emit('configChanged', event);
+
+
+        } catch (err) {
+            logger.error(err);
+        }
+    }
+    public async listenConfig(): Promise<void> {
+        try {
+            this.redisListen = this.createRedisClient();
+            await this.redisListen.subscribe('/config/changed');
+            await this.redisListen.onMessage(async (channel: string, msg: string) => {
+                await this.onConfigChanged(channel, msg);
+            });
+
+        } catch (err) {
+            logger.error(err);
+            setTimeout(async () => {
+                await this.stop();
+                await this.start();
+            }, 5000);//try again 5 seconds
+        }
+    }
     async stop() {
         this.isWorking = false;
-
+        await this.redisListen?.disconnect();
+        this.redisListen = null;
+        await this.redisStream?.disconnect();
+        this.redisStream = null;
     }
 
     async createRequest(msg: ConfigRequest, timeout = 5000) {

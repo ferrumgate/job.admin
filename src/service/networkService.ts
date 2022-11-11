@@ -5,10 +5,12 @@ import { Util } from "../util";
 export class NetworkService {
 
     static async ipAddr(int: string, ip: string) {
-        logger.info(`setting ip to interface`);
-        const exits = await Util.exec(`ip a|grep ${ip}|wc -l`)
-        if (exits == '0') {
-            if (ip.includes(`/`))
+        logger.info(`setting ip ${ip} to interface ${int}`);
+        const exitsStr = await Util.exec(`ip a|grep ${ip}|wc -l`);
+        const exits = Number(exitsStr);
+        if (!exits) {
+            logger.info(`ip ${ip} not found on interface ${int}`);
+            if (!ip.includes(`/`))
                 ip += '/32';
             const log = await Util.exec(`ip addr add ${ip} dev ${int}`)
             if (log)

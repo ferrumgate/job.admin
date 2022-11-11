@@ -20,11 +20,14 @@ export class CheckServices extends HostBasedTask {
 
 
     protected timerCheck: any | null = null;
-    protected redisListen: RedisService | null = null;
+
 
     constructor(protected redisOptions: RedisOptions, configService: ConfigService,
         protected dockerService: DockerService) {
         super(configService);
+        this.configService.eventEmitter.on('configChanged', (evt: ConfigEvent) => {
+            this.onConfigChanged(evt);
+        })
     }
     protected createRedisClient() {
         return new RedisService(this.redisOptions.host, this.redisOptions.password);
@@ -39,18 +42,12 @@ export class CheckServices extends HostBasedTask {
     public async closeService(pod: Pod) {
         await this.dockerService.stop(pod);
     }
-    private lastCheck = 0;
-    public resetLastCheck() {
-        this.lastCheck = 0;
-    }
+
 
     public async checkServices(immediately = false) {
 
         try {
-            let now = new Date().getTime();
-            if (this.lastCheck + 30000 > now && !immediately)
-                return;
-            this.lastCheck = now;
+
             logger.info(`checking all services`);
             await this.readHostId();
 
@@ -91,13 +88,16 @@ export class CheckServices extends HostBasedTask {
         }
     }
     async compare(running: Pod[], services: Service[]) {
+
         for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
             if (serviceId) {
                 const service = services.find(x => x.id == serviceId)
-                if (!service || !service.isEnabled)
-                    await this.dockerService.stop(run);
+                if (!service || !service.isEnabled) {
+                    logger.warn(`closing pod ${run.name}`);
+                    try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                }
             }
         }
         const secureserver = running.find(x => x.image.includes('secure.server') || x.name.includes('secure.server'));
@@ -108,19 +108,23 @@ export class CheckServices extends HostBasedTask {
             const run = running.find(x => x.name.startsWith('ferrumsvc') && x.name.includes(`-${svc.id}-`))
             if (!run) {//not running 
                 logger.info(`not running service found ${svc.name}`);
-                await this.dockerService.run(svc, `container:${secureserver.id}`);
+                try {
+                    await this.dockerService.run(svc, `container:${secureserver.id}`);
+                } catch (ignore: any) {
+                    logger.error(ignore);
+                }
             }
         }
 
 
     }
 
-    public async onConfigChanged(chan: string, msg: string) {
+    public async onConfigChanged(event: ConfigEvent) {
         try {
-            logger.info(`config changed ${msg}`);
-            const event: ConfigEvent = JSON.parse(msg) as ConfigEvent;
+
             if (event.path.startsWith('/services') || event.path.startsWith('/gateways') || event.path.startsWith('/networks')) {
-                await this.checkServices(true);
+                logger.info(`check immediately services`);
+                await this.checkServices();
             }
 
         } catch (err) {
@@ -131,11 +135,7 @@ export class CheckServices extends HostBasedTask {
 
     public override async start(): Promise<void> {
         try {
-            this.redisListen = this.createRedisClient();
-            await this.redisListen.subscribe('/config/changed');
-            await this.redisListen.onMessage(async (channel: string, msg: string) => {
-                await this.onConfigChanged(channel, msg);
-            });
+
             await this.checkServices();
             this.timerCheck = setIntervalAsync(async () => {
                 await this.checkServices();
@@ -153,12 +153,12 @@ export class CheckServices extends HostBasedTask {
             if (this.timerCheck)
                 await clearIntervalAsync(this.timerCheck);
             this.timerCheck = null;
-            await this.redisListen?.disconnect();
+
 
         } catch (err) {
             logger.error(err);
         } finally {
-            this.redisListen = null;
+
         }
     }
 

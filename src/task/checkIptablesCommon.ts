@@ -3,6 +3,7 @@ import { logger } from "../common";
 import { HostBasedTask } from "./hostBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
+import { ConfigEvent } from "../model/configEvent";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * check common rules in iptables
@@ -15,9 +16,24 @@ export class CheckIptablesCommon extends HostBasedTask {
     private lastCheckTime2 = new Date(1).getTime();
     constructor(protected redisOptions: RedisOptions, protected configService: ConfigService) {
         super(configService);
+        this.configService.eventEmitter.on('configChanged', (evt: ConfigEvent) => {
+            this.onConfigChanged(evt);
+        })
     }
     protected createRedisClient() {
         return new RedisService(this.redisOptions.host, this.redisOptions.password);
+    }
+    public async onConfigChanged(event: ConfigEvent) {
+        try {
+
+            if (event.path.startsWith('/gateways') || event.path.startsWith('/networks')) {
+                logger.info(`check immediately common iptable rules`);
+                await this.check();
+            }
+
+        } catch (err) {
+            logger.error(err);
+        }
     }
 
     public async check() {

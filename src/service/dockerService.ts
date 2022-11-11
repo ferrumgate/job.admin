@@ -51,8 +51,9 @@ ${tcp_listen} ${udp_listen}
     }
     async exec(cmd: string) {
         const log = await Util.exec(cmd)
-        if (log)
+        if (log) {
             logger.info(log);
+        }
     }
     async ipAddr(svc: Service) {
         await NetworkService.ipAddr('lo', svc.assignedIp);
@@ -67,7 +68,9 @@ docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumsvc-${this
 -d ${this.getEnv(svc)}
 ${this.getHostServiceInstanceId()}
 ${image}`
-        command = command.replace(/\n/g, ' ')
+        command = command.replace(/\n/g, ' ');
+        if (process.env.LOG_LEVEL?.toLowerCase() == 'debug')
+            logger.info(command);
         await this.exec(command);
         return command;
     }
