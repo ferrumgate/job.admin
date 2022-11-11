@@ -96,7 +96,7 @@ export class NetworkService {
         //-A INPUT -i ferrum+ -j DROP
         //check if drop all exits
         logger.info(`check iptables ferrum+ rules in INPUT all DROP`);
-        let tunAllCountStr = await Util.exec(`iptables -nvL INPUT|grep 'ferrum+ -j DROP'|wc -l`);
+        let tunAllCountStr = await Util.exec(`iptables -S INPUT|grep 'ferrum+'|grep -v '\\-d'|wc -l`);
         let tunAllCount = Number(tunAllCountStr);
 
         if (tunAllCount) {
@@ -107,10 +107,10 @@ export class NetworkService {
         }
         // check input and forward tables
         logger.info(`check iptables ferrum+ rules in INPUT and FORWARD`);
-        let tunCountStr = await Util.exec(`iptables -nvL INPUT|grep ferrum+|wc -l`);
+        let tunCountStr = await Util.exec(`iptables -S INPUT|grep ferrum+|wc -l`);
         let tunCount = Number(tunCountStr);
 
-        let networkCountStr = await Util.exec(`iptables -nvL INPUT|grep ferrum+|grep '${destinationNetwork}'|wc -l`);
+        let networkCountStr = await Util.exec(`iptables -S INPUT|grep ferrum+|grep '${destinationNetwork}'|wc -l`);
         let networkCount = Number(networkCountStr);
 
         if (!networkCount && tunCount) {//network changed, delete first
@@ -127,10 +127,10 @@ export class NetworkService {
                 logger.info(log)
         }
 
-        tunCountStr = await Util.exec(`iptables -nvL FORWARD|grep ferrum+|wc -l`);
+        tunCountStr = await Util.exec(`iptables -S FORWARD|grep ferrum+|wc -l`);
         tunCount = Number(tunCountStr);
 
-        networkCountStr = await Util.exec(`iptables -nvL FORWARD|grep ferrum+|grep '${destinationNetwork}'|wc -l`);
+        networkCountStr = await Util.exec(`iptables -S FORWARD|grep ferrum+|grep '${destinationNetwork}'|wc -l`);
         networkCount = Number(networkCountStr);
         if (!networkCount && tunCount) {//network changed, delete first
             logger.info("service network changed to " + destinationNetwork);
@@ -151,7 +151,7 @@ export class NetworkService {
     static async blockToIptablesCommon() {
         //-A INPUT -i ferrum+ -j DROP
         logger.info(`check iptables ferrum+ rules in INPUT all DROP`);
-        let tunCountStr = await Util.exec(`iptables -nvL INPUT|grep 'ferrum+ -j DROP'|wc -l`);
+        let tunCountStr = await Util.exec(`iptables -S INPUT|grep 'ferrum+'|grep -v '\\-d'|wc -l`);
         let tunCount = Number(tunCountStr);
 
         if (tunCount == 0) {

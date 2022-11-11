@@ -198,7 +198,6 @@ describe('checkServices', () => {
         const isWorking = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
         console.log(isWorking);
         if (isWorking.replace('\n', '') !== '0') {
-            console.log('burasi niye');
             await Util.exec(`docker stop secure.server`);
         }
         await Util.exec("docker run -d --rm --name secure.server nginx");

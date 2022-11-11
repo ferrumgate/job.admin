@@ -44,11 +44,11 @@ export class CheckServices extends HostBasedTask {
         this.lastCheck = 0;
     }
 
-    public async checkServices() {
+    public async checkServices(immediately = false) {
 
         try {
             let now = new Date().getTime();
-            if (this.lastCheck + 30000 > now)
+            if (this.lastCheck + 30000 > now && !immediately)
                 return;
             this.lastCheck = now;
             logger.info(`checking all services`);
@@ -84,14 +84,14 @@ export class CheckServices extends HostBasedTask {
 
             const services = await this.configService.getServicesByGatewayId();
             const running = await this.dockerService.getAllRunning();
-            await this.compare(running.filter(x => x.name.includes('ferrumsvc')), services);
+            await this.compare(running, services);
 
         } catch (err) {
             logger.error(err);
         }
     }
     async compare(running: Pod[], services: Service[]) {
-        for (const run of running) {//check running services that must stop
+        for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
             if (serviceId) {
@@ -100,7 +100,7 @@ export class CheckServices extends HostBasedTask {
                     await this.dockerService.stop(run);
             }
         }
-        const secureserver = running.find(x => x.name.includes('secure.server'));
+        const secureserver = running.find(x => x.image.includes('secure.server') || x.name.includes('secure.server'));
         if (!secureserver) {
             throw new Error(`secure server pod not running`);
         }
@@ -119,8 +119,8 @@ export class CheckServices extends HostBasedTask {
         try {
             logger.info(`config changed ${msg}`);
             const event: ConfigEvent = JSON.parse(msg) as ConfigEvent;
-            if (event.path.startsWith('/services') || event.path.startsWith('gateways') || event.path.startsWith('networks')) {
-                await this.checkServices();
+            if (event.path.startsWith('/services') || event.path.startsWith('/gateways') || event.path.startsWith('/networks')) {
+                await this.checkServices(true);
             }
 
         } catch (err) {
