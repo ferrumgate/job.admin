@@ -201,7 +201,7 @@ describe('redisService', () => {
         const simpleRedis2 = new RedisService('localhost:6379');
         let obj = { ttl: 10 };
         let isDataReceived = false;
-        await simpleRedis.subsribe('test.channel');
+        await simpleRedis.subscribe('test.channel');
         await simpleRedis.onMessage((channel: string, message: string) => {
             isDataReceived = true;
         })

@@ -10,6 +10,7 @@ export interface Tunnel {
     tun?: string;
     //connected client id
     clientIp?: string;
+    trackId?: number;
     // peer client ip
     assignedClientIp?: string;
     // authenticated user id
