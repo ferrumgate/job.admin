@@ -116,8 +116,9 @@ export class ConfigService {
     }
     public async onConfigChanged(chan: string, msg: string) {
         try {
-            logger.info(`config changed ${msg}`);
-            const event: ConfigEvent = JSON.parse(msg) as ConfigEvent;
+            let encoded = Buffer.from(msg, 'base64').toString();
+            logger.info(`config changed ${encoded}`);
+            const event: ConfigEvent = JSON.parse(encoded) as ConfigEvent;
 
             await this.eventEmitter.emit('configChanged', event);
 
