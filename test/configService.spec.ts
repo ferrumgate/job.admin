@@ -35,13 +35,13 @@ describe('configService', () => {
 
     it('createRequest', async () => {
         const config = new ConfigService('/tmp/abc', 'localhost:6379');
-        const request = await config.createRequest({ id: '1', func: 'getServiceId', hostId: '123', params: [] }, 1000)
+        const request = await config.createRequest({ id: '1', func: 'getServiceId', gatewayId: '123', params: [] }, 1000)
         const result = await request.promise;
         expect(result.id).to.equal('1');
         expect(result.isError).to.be.true;
 
         //
-        const request2 = await config.createRequest({ id: '2', func: 'getServiceId', hostId: '123', params: [] }, 5000)
+        const request2 = await config.createRequest({ id: '2', func: 'getServiceId', gatewayId: '123', params: [] }, 5000)
         setTimeout(() => {
             config.eventEmitter.emit('data', { id: '2', result: 12 })
         }, 1000);
@@ -56,15 +56,15 @@ describe('configService', () => {
     it('execute', async () => {
         const simpleRedis = new RedisService('localhost:6379');
         const simpleRedis2 = new RedisService('localhost:6379');
-        fs.writeFileSync('/tmp/abc', 'host=123');
+        fs.writeFileSync('/tmp/abc', 'gatewayId=123');
         const config = new ConfigService('/tmp/abc', 'localhost:6379');
         await simpleRedis.onMessage(async () => {
             let item = { id: '1', result: 'test' };
-            return simpleRedis2.xadd('/query/host/123', { data: Buffer.from(JSON.stringify(item)).toString('base64') });
+            return simpleRedis2.xadd('/query/gateway/123', { data: Buffer.from(JSON.stringify(item)).toString('base64') });
         })
         await simpleRedis.subscribe('/query/config');
         await config.start();
-        const response = await config.execute<string>({ id: '1', func: 'getSomething', hostId: '1', params: ['1'] });
+        const response = await config.execute<string>({ id: '1', func: 'getSomething', gatewayId: '1', params: ['1'] });
         await Util.sleep(1000);
         expect(response).to.equal('test');
         await config.stop();
@@ -73,7 +73,7 @@ describe('configService', () => {
 
     it('listenStream', async () => {
         const simpleRedis = new RedisService('localhost:6379');
-        fs.writeFileSync('/tmp/abc', 'host=123');
+        fs.writeFileSync('/tmp/abc', 'gatewayId=123');
 
         const config = new ConfigService('/tmp/abc', 'localhost:6379');
         await config.start();
@@ -85,7 +85,7 @@ describe('configService', () => {
         config.requestList.set('1', {} as any);
         await Util.sleep(100);
         for (let i = 0; i < 10; ++i) {
-            await simpleRedis.xadd('/query/host/123', { data: Buffer.from(JSON.stringify(resp)).toString('base64') });
+            await simpleRedis.xadd('/query/gateway/123', { data: Buffer.from(JSON.stringify(resp)).toString('base64') });
             await Util.sleep(100);
         }
         await Util.sleep(2000);

@@ -40,8 +40,8 @@ describe('iAmAlive', () => {
                 super(redisOption, configService);
 
             }
-            protected override async readHostId(): Promise<void> {
-                this.hostId = 'myhost123';
+            protected override async readGatewayId(): Promise<void> {
+                this.gatewayId = 'myhost123';
             }
             create() {
                 this.redis = super.createRedisClient();
@@ -55,7 +55,7 @@ describe('iAmAlive', () => {
         await alive.check();
 
         const simpleRedis = new RedisService('localhost:6379');
-        const host = await simpleRedis.hgetAll('/host/alive/id/myhost123');
+        const host = await simpleRedis.hgetAll('/gateway/alive/id/myhost123');
         expect(host).exist;
         expect(host.lastSeen).exist;
 

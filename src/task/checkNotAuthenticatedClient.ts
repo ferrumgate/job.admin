@@ -7,7 +7,7 @@ import { logger } from "../common";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { ConfigService } from "../service/configService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -16,7 +16,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * when a client authenticated, system pushes info for managing, and also adds to a list
  * if something goes wrong, check this list
  */
-export class CheckNotAuthenticatedClients extends HostBasedTask {
+export class CheckNotAuthenticatedClients extends GatewayBasedTask {
 
 
     private timer: any | null = null;
@@ -32,7 +32,7 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
     protected async removeFromList(tunnelId: string) {
         try {
             //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnelId);
+            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnelId);
         } catch (ignored) {
             logger.error(ignored);
         }
@@ -50,10 +50,10 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
     protected async configure(tunnelkey: string) {
 
         try {
-            logger.info(`configure tunnel: ${tunnelkey} on host: ${this.hostId}`)
+            logger.info(`configure tunnel: ${tunnelkey} on gateway: ${this.gatewayId}`)
             const tunnel = await this.redis?.hgetAll(`/tunnel/id/${tunnelkey}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
-            if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
+            if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun && tunnel.authenticatedTime && tunnel.assignedClientIp && tunnel.serviceNetwork && tunnel.trackId) {
                 const now = new Date().getTime();
                 const authenticatedTime = Date.parse(tunnel.authenticatedTime);
@@ -74,9 +74,9 @@ export class CheckNotAuthenticatedClients extends HostBasedTask {
     public async check() {
 
         try {
-            logger.info(`get all tunnels on this machine ${this.hostId} needs to configure`);
-            await this.readHostId();
-            const tunnels = await this.redis?.smembers(`/tunnel/configure/${this.hostId}`);
+            logger.info(`get all tunnels on this machine ${this.gatewayId} needs to configure`);
+            await this.readGatewayId();
+            const tunnels = await this.redis?.smembers(`/tunnel/configure/${this.gatewayId}`);
             logger.info(`check not authenticated client list length: ${tunnels?.length}`);
             for (const tunnel of tunnels || []) {
                 await this.configure(tunnel);

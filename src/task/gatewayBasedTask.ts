@@ -3,10 +3,10 @@ import fspromise from 'fs/promises';
 import { ConfigService } from "../service/configService";
 
 /**
- * a base class that reads hostId from configfile
+ * a base class that reads gatewayId from configfile
  */
-export abstract class HostBasedTask extends BaseTask {
-    protected hostId = '';
+export abstract class GatewayBasedTask extends BaseTask {
+    protected gatewayId = '';
 
     /**
      *
@@ -15,7 +15,7 @@ export abstract class HostBasedTask extends BaseTask {
         super();
     }
 
-    protected async readHostId() {
-        this.hostId = await this.configService.readHostId();
+    protected async readGatewayId() {
+        this.gatewayId = await this.configService.readGatewayId();
     }
 }

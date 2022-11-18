@@ -1,6 +1,6 @@
 import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 import { Service } from "../model/service";
@@ -16,7 +16,7 @@ export interface ServiceEx extends Service {
 
 }
 
-export class CheckServices extends HostBasedTask {
+export class CheckServices extends GatewayBasedTask {
 
 
     protected timerCheck: any | null = null;
@@ -49,32 +49,32 @@ export class CheckServices extends HostBasedTask {
         try {
 
             logger.info(`checking all services`);
-            await this.readHostId();
+            await this.readGatewayId();
 
             const currentGateway = await this.configService.getGatewayById();
             if (!currentGateway) {
-                logger.error(`current gateway not found ${this.hostId}`);
+                logger.error(`current gateway not found ${this.gatewayId}`);
                 await this.closeAllServices();
                 return;
             }
             if (!currentGateway.isEnabled) {
-                logger.error(`current gateway disabled ${this.hostId}`);
+                logger.error(`current gateway disabled ${this.gatewayId}`);
                 await this.closeAllServices();
                 return;
             }
             const network = await this.configService.getNetworkByGatewayId();
             if (!network) {
-                logger.error(`current network not found for gateway ${this.hostId}`);
+                logger.error(`current network not found for gateway ${this.gatewayId}`);
                 await this.closeAllServices();
                 return;
             }
             if (!network.isEnabled) {
-                logger.error(`current network disabled for gateway ${this.hostId}`);
+                logger.error(`current network disabled for gateway ${this.gatewayId}`);
                 await this.closeAllServices();
                 return;
             }
             if (!network.serviceNetwork) {
-                logger.error(`service network is not valid for gateway ${this.hostId}`);
+                logger.error(`service network is not valid for gateway ${this.gatewayId}`);
                 await this.closeAllServices();
                 return;
             }
@@ -88,7 +88,7 @@ export class CheckServices extends HostBasedTask {
         }
     }
     async compare(running: Pod[], services: Service[]) {
-        await this.readHostId();
+        await this.readGatewayId();
         for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
@@ -109,7 +109,7 @@ export class CheckServices extends HostBasedTask {
             if (!run) {//not running 
                 logger.info(`not running service found ${svc.name}`);
                 try {
-                    await this.dockerService.run(svc, this.hostId, `container:${secureserver.id}`);
+                    await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`);
                 } catch (ignore: any) {
                     logger.error(ignore);
                 }

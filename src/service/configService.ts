@@ -15,7 +15,7 @@ import { ConfigEvent } from "../model/configEvent";
  */
 interface ConfigRequest {
     id: string;
-    hostId: string;
+    gatewayId: string;
     func: string,
     params: string[]
 }
@@ -47,7 +47,7 @@ export class ConfigService {
     protected redis: RedisService | null = null;
     protected redisStream: RedisService | null = null;
     protected redisListen: RedisService | null = null;
-    private hostId = '';
+    private gatewayId = '';
     private isWorking = false;
     private streamPos = '$';
     public requestList = new Map<string, RequestItem>();
@@ -63,28 +63,28 @@ export class ConfigService {
 
 
 
-    async readHostId() {
+    async readGatewayId() {
 
 
-        if (this.hostId) return this.hostId;
+        if (this.gatewayId) return this.gatewayId;
 
         const file = (await fsp.readFile(this.configFilePath)).toString();
-        const hostline = file.split('\n').find(x => x.startsWith('host='));
-        if (!hostline) throw new Error(`no host id found in config ${this.configFilePath}`);
+        const hostline = file.split('\n').find(x => x.startsWith('gatewayId='));
+        if (!hostline) throw new Error(`no gateway id found in config ${this.configFilePath}`);
         const parts = hostline.split('=');
-        if (parts.length != 2) throw new Error(`no host id found in config ${this.configFilePath}`);
-        this.hostId = parts[1];
-        if (!this.hostId)
-            throw new Error(`no host id found in config ${this.configFilePath}`);
-        return this.hostId;
+        if (parts.length != 2) throw new Error(`no gateway id found in config ${this.configFilePath}`);
+        this.gatewayId = parts[1];
+        if (!this.gatewayId)
+            throw new Error(`no gateway id found in config ${this.configFilePath}`);
+        return this.gatewayId;
     }
 
     async listenStream() {
         while (this.isWorking) {
 
             try {
-                await this.readHostId();
-                const items = await this.redisStream?.xread(`/query/host/${this.hostId}`, 10000, this.streamPos, 2000);
+                await this.readGatewayId();
+                const items = await this.redisStream?.xread(`/query/gateway/${this.gatewayId}`, 10000, this.streamPos, 2000);
                 if (items) {
                     for (const item of items) {
                         this.streamPos = item.xreadPos;
@@ -176,9 +176,9 @@ export class ConfigService {
     }
 
     async execute<T>(msg: ConfigRequest) {
-        await this.readHostId();
-        if (!this.hostId)
-            throw new Error(`hostId not found`);
+        await this.readGatewayId();
+        if (!this.gatewayId)
+            throw new Error(`gatewayId not found`);
 
         const request = await this.createRequest(msg);
         await this.redis?.publish(this.redisPublish, Buffer.from(JSON.stringify(msg)).toString('base64'));
@@ -194,9 +194,9 @@ export class ConfigService {
     async getGatewayById() {
         let msg: ConfigRequest = {
             id: Util.randomNumberString(),
-            hostId: this.hostId,
+            gatewayId: this.gatewayId,
             func: 'getGatewayById',
-            params: [this.hostId]
+            params: [this.gatewayId]
         }
         return await this.execute<Gateway | null>(msg);
 
@@ -204,9 +204,9 @@ export class ConfigService {
     async getNetworkByGatewayId() {
         let msg: ConfigRequest = {
             id: Util.randomNumberString(),
-            hostId: this.hostId,
+            gatewayId: this.gatewayId,
             func: 'getNetworkByGatewayId',
-            params: [this.hostId]
+            params: [this.gatewayId]
         }
         return await this.execute<Network | null>(msg);
 
@@ -216,9 +216,9 @@ export class ConfigService {
     async getServicesByGatewayId() {
         let msg: ConfigRequest = {
             id: Util.randomNumberString(),
-            hostId: this.hostId,
+            gatewayId: this.gatewayId,
             func: 'getServicesByGatewayId',
-            params: [this.hostId]
+            params: [this.gatewayId]
         }
         return await this.execute<Service[]>(msg);
 
@@ -227,7 +227,7 @@ export class ConfigService {
     async getService(id: string) {
         let msg: ConfigRequest = {
             id: Util.randomNumberString(),
-            hostId: this.hostId,
+            gatewayId: this.gatewayId,
             func: 'getService',
             params: [id]
         }

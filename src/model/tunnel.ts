@@ -17,9 +17,11 @@ export interface Tunnel {
     userId?: string;
     // authentication time
     authenticatedTime?: string;
-    // host id
-    hostId?: string
+    // gateway id
+    gatewayId?: string
     // service network
     serviceNetwork?: string;
+    // sessionId
+    sessionId?: string;
 
 }

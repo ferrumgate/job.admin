@@ -42,8 +42,8 @@ describe('checkTunDevicesVSRedis', () => {
                 super(redisOption, configService);
 
             }
-            protected override async readHostId(): Promise<void> {
-                this.hostId = 'myhost123';
+            protected override async readGatewayId(): Promise<void> {
+                this.gatewayId = 'myhost123';
             }
 
         }
@@ -61,7 +61,7 @@ describe('checkTunDevicesVSRedis', () => {
         }
         // insert some data to redis
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
-        await simpleRedis.set(`/host/myhost123/tun/ferrum1`, 1);
+        await simpleRedis.set(`/gateway/myhost123/tun/ferrum1`, 1);
 
         const configService = new ConfigService('/tmp/config');
         const checker = new Mock({ host: 'localhost:6379' }, configService);

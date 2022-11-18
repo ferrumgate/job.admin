@@ -51,7 +51,7 @@ describe('dockerService', () => {
             labels: [],
             host: '1.2.3.4',
             networkId: 'abcd',
-            tcp: 3306, assignedIp: '1.3',
+            tcp: 3306, assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
 
@@ -62,7 +62,7 @@ describe('dockerService', () => {
         let svc = createSampleData();
         const docker = new DockerService();
         const result = docker.getEnv(svc);
-        expect(result.trim()).to.equal('-e LOG_LEVEL=INFO -e REDIS_HOST=localhost:6379   -e REDIS_LOCAL_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=1.3 -e RAW_LISTEN_TCP_PORT=3306');
+        expect(result.trim()).to.equal('-e LOG_LEVEL=INFO -e REDIS_HOST=localhost:6379   -e REDIS_LOCAL_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
 
@@ -81,7 +81,7 @@ describe('dockerService', () => {
         const docker = new Mock();
         const result = await docker.run(svc, '231a0932', 'host');
         expect(docker.ip).to.equal('an ip');
-        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name mysql-dev-3KoOOLwzfUeX5FCu  -d  -e LOG_LEVEL=INFO -e REDIS_HOST=localhost:6379   -e REDIS_LOCAL_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=1.3 -e RAW_LISTEN_TCP_PORT=3306    -e HOST_ID=hostId -e SERVICE_ID=serviceId -e'))
+        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name mysql-dev-3KoOOLwzfUeX5FCu  -d  -e LOG_LEVEL=INFO -e REDIS_HOST=localhost:6379   -e REDIS_LOCAL_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=gatewayId -e SERVICE_ID=serviceId -e'))
 
 
     }).timeout(1000)
