@@ -27,7 +27,7 @@ describe('checkNotAuthenticatedClients', () => {
         await simpleRedis.flushAll();
         if (fs.existsSync(tmpfolder))
             await fs.rmSync(tmpfolder, { recursive: true, force: true });
-        fs.writeFileSync('/tmp/config', 'host=123')
+        fs.writeFileSync('/tmp/config', 'gatewayId=123')
     })
 
     it('configure', async () => {
@@ -38,7 +38,7 @@ describe('checkNotAuthenticatedClients', () => {
             constructor(protected redisOptions: RedisOptions, configFilePath: string) {
                 super(redisOptions, configService);
                 this.redis = this.createRedisClient();
-                this.hostId = 'ahostid'
+                this.gatewayId = 'agatewayid'
             }
 
             public async testRemoveFromList(tunnelId: string) {
@@ -58,16 +58,16 @@ describe('checkNotAuthenticatedClients', () => {
         const tunnel: Tunnel = {
             id: key, tun: 'tun0', assignedClientIp: '1.2.3.4',
             authenticatedTime: new Date().toISOString(), clientIp: '3.4.5.6',
-            hostId: 'ahostid', serviceNetwork: '172.10.0.0/16', userId: '12', trackId: 3
+            gatewayId: 'agatewayid', serviceNetwork: '172.10.0.0/16', userId: '12', trackId: 3
         }
         await redis.hset(`/tunnel/id/${key}`, tunnel);
-        await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
+        await redis.sadd(`/tunnel/configure/${tunnel.gatewayId}`, key);
 
 
         //execute
         const mock = new Mock({ host: 'localhost:6379' }, '/tmp/ferrumgate/config');
         await mock.testRemoveFromList(key);//remove from list
-        let isExists = await redis.sismember(`/tunnel/configure/${tunnel.hostId}`, key);
+        let isExists = await redis.sismember(`/tunnel/configure/${tunnel.gatewayId}`, key);
         expect(isExists > 0).to.be.false;
 
 
@@ -75,9 +75,9 @@ describe('checkNotAuthenticatedClients', () => {
         tunnel.authenticatedTime = new Date(new Date().getTime() - 4 * 60 * 1000).toISOString();
         await redis.hset(`/tunnel/id/${key}`, tunnel);
         //add again
-        await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
+        await redis.sadd(`/tunnel/configure/${tunnel.gatewayId}`, key);
         await mock.testConfigure(key);
-        isExists = await redis.sismember(`/tunnel/configure/${tunnel.hostId}`, key);
+        isExists = await redis.sismember(`/tunnel/configure/${tunnel.gatewayId}`, key);
         expect(isExists > 0).to.be.false;
         expect(mock.isConfiguredNetwork).to.be.false;//because there must be error
 
@@ -88,9 +88,9 @@ describe('checkNotAuthenticatedClients', () => {
         tunnel.authenticatedTime = new Date(new Date().getTime() - 2 * 60 * 1000).toISOString();
         await redis.hset(`/tunnel/id/${key}`, tunnel);
         //add again
-        await redis.sadd(`/tunnel/configure/${tunnel.hostId}`, key);
+        await redis.sadd(`/tunnel/configure/${tunnel.gatewayId}`, key);
         await mock.testConfigure(key);
-        isExists = await redis.sismember(`/tunnel/configure/${tunnel.hostId}`, key);
+        isExists = await redis.sismember(`/tunnel/configure/${tunnel.gatewayId}`, key);
         expect(isExists > 0).to.be.false;
         expect(mock.isConfiguredNetwork).to.be.true;//because there is no error, network configured successfuly
 

@@ -1,6 +1,6 @@
 import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -10,7 +10,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * delete tun device
  */
 
-export class CheckTunDevicesVSRedis extends HostBasedTask {
+export class CheckTunDevicesVSRedis extends GatewayBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;
@@ -24,7 +24,7 @@ export class CheckTunDevicesVSRedis extends HostBasedTask {
     private async removeFromList(tunnelId: string) {
         try {
             //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnelId);
+            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnelId);
         } catch (ignored) {
             logger.error(ignored);
         }
@@ -36,13 +36,13 @@ export class CheckTunDevicesVSRedis extends HostBasedTask {
             const diff = new Date().getTime() - this.lastCheckTime2;
             if (diff > 60000) { //every 60 seconds
                 logger.info(`check tun devices to redis`);
-                await this.readHostId();
+                await this.readGatewayId();
                 const devices = await NetworkService.getTunDevices();
                 for (const device of devices) {
-                    if (this.hostId && device) {
-                        const tunnelKey = await this.redis?.get(`/host/${this.hostId}/tun/${device}`, false) as string
+                    if (this.gatewayId && device) {
+                        const tunnelKey = await this.redis?.get(`/gateway/${this.gatewayId}/tun/${device}`, false) as string
                         if (!tunnelKey) {//there is a problem delete tun device
-                            logger.info(`deleting device ${device} not exits on host ${this.hostId}`);
+                            logger.info(`deleting device ${device} not exits on host ${this.gatewayId}`);
                             await NetworkService.linkDelete(device);
 
                         }

@@ -1,6 +1,6 @@
 import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 import os from 'os';
@@ -11,7 +11,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * 
  */
 
-export class IAmAlive extends HostBasedTask {
+export class IAmAlive extends GatewayBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;
@@ -28,11 +28,11 @@ export class IAmAlive extends HostBasedTask {
         try {
 
             logger.info(`write I am alive to redis global`);
-            await this.readHostId();
+            await this.readGatewayId();
             //set to the global
-            let hostkey = `/host/alive/id/${this.hostId}`;
+            let hostkey = `/gateway/alive/id/${this.gatewayId}`;
             await this.redis?.hset(hostkey, {
-                id: this.hostId,
+                id: this.gatewayId,
                 arch: os.arch(),
                 cpusCount: os.cpus().length,
                 cpuInfo: os.cpus().find(x => x)?.model,

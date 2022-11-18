@@ -46,7 +46,7 @@ describe('WhenClientAuthenticated', () => {
 
     it('task will start after 5 seconds because no redis exits', async () => {
         await fspromise.mkdir(tmpfolder);
-        await fspromise.writeFile(`${tmpfolder}/config`, 'host=1234');
+        await fspromise.writeFile(`${tmpfolder}/config`, 'gatewayId=1234');
         class Mock extends WhenClientAuthenticated {
             counter = 0;
             host = '';
@@ -56,13 +56,13 @@ describe('WhenClientAuthenticated', () => {
                 await super.start();
 
             }
-            override  async readHostId() {
-                await super.readHostId();
-                this.host = this.hostId;
+            override  async readGatewayId() {
+                await super.readGatewayId();
+                this.host = this.gatewayId;
             }
         }
         let randomFilename = `/tmp/${Util.randomNumberString()}`;
-        await fspromise.writeFile(randomFilename, 'host=1234');
+        await fspromise.writeFile(randomFilename, 'gatewayId=1234');
         const configService = new ConfigService(randomFilename);
         const task = new Mock({ host: 'localhost:6380' }, configService);
         await task.start();
@@ -76,7 +76,7 @@ describe('WhenClientAuthenticated', () => {
 
     it('onMessageExecuted', async () => {
         await fspromise.mkdir(tmpfolder);
-        await fspromise.writeFile(`${tmpfolder}/config`, 'host=1234');
+        await fspromise.writeFile(`${tmpfolder}/config`, 'gatewayId=1234');
         class Mock extends WhenClientAuthenticated {
 
             isCalled = false;
@@ -87,7 +87,7 @@ describe('WhenClientAuthenticated', () => {
             }
         }
         let randomFilename = `/tmp/${Util.randomNumberString()}`;
-        await fspromise.writeFile(randomFilename, 'host=1234');
+        await fspromise.writeFile(randomFilename, 'gatewayId=1234');
         const configService = new ConfigService(randomFilename);
         const task = new Mock({ host: 'localhost:6379' }, configService);
         await task.start();

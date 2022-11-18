@@ -20,8 +20,8 @@ export class HelperService {
             throw new Error('tunnel is not valid, no user');
         if (!tun.assignedClientIp)
             throw new Error('tunnel is not valid, no assignedClientIp');
-        if (!tun.hostId)
-            throw new Error('tunnel is not valid, no hostId');
+        if (!tun.gatewayId)
+            throw new Error('tunnel is not valid, no gatewayId');
         if (!tun.serviceNetwork)
             throw new Error('tunnel is not valid, no serviceNetwork');
 

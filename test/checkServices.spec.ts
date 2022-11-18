@@ -33,7 +33,7 @@ describe('checkServices', () => {
         }
         if (fs.existsSync(configFilePath))
             fs.rmSync(configFilePath)
-        fs.writeFileSync(configFilePath, 'host=231a0932');
+        fs.writeFileSync(configFilePath, 'gatewayId=231a0932');
     })
 
 
@@ -72,7 +72,7 @@ describe('checkServices', () => {
             labels: [],
             host: '1.2.3.4',
             networkId: network.id,
-            tcp: 3306, assignedIp: '1.3',
+            tcp: 3306, assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
 

@@ -52,7 +52,7 @@ describe('checkIptablesCommonTask', () => {
 
 
         }
-        fs.writeFileSync('/tmp/x.conf', 'host=123');
+        fs.writeFileSync('/tmp/x.conf', 'gatewayId=123');
         const config = new MockConfigService('/tmp/x.conf', 'localhost:6379') as unknown as ConfigService;
         const task = new Mock({ host: 'localhost:6379' }, config);
         await task.start();

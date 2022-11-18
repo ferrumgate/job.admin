@@ -1,6 +1,6 @@
 import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -9,7 +9,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * for security remove this rule if device not exits
  */
 
-export class CheckTunDevicesVSIptables extends HostBasedTask {
+export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;

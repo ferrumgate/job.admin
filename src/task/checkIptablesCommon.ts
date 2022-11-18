@@ -1,6 +1,6 @@
 import { RedisOptions, RedisService } from "../service/redisService";
 import { logger } from "../common";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 import { ConfigEvent } from "../model/configEvent";
@@ -9,7 +9,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  * check common rules in iptables
  */
 
-export class CheckIptablesCommon extends HostBasedTask {
+export class CheckIptablesCommon extends GatewayBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;
@@ -41,31 +41,31 @@ export class CheckIptablesCommon extends HostBasedTask {
         try {
             //every 30 seconds
             logger.info(`check common ip rules`);
-            await this.readHostId();
+            await this.readGatewayId();
             const currentGateway = await this.configService.getGatewayById();
             if (!currentGateway) {
-                logger.error(`current gateway not found ${this.hostId}`);
+                logger.error(`current gateway not found ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
                 return;
             }
             if (!currentGateway.isEnabled) {
-                logger.error(`current gateway disabled ${this.hostId}`);
+                logger.error(`current gateway disabled ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
                 return;
             }
             const network = await this.configService.getNetworkByGatewayId();
             if (!network) {
-                logger.error(`current network not found for gateway ${this.hostId}`);
+                logger.error(`current network not found for gateway ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
                 return;
             }
             if (!network.isEnabled) {
-                logger.error(`current network disabled for gateway ${this.hostId}`);
+                logger.error(`current network disabled for gateway ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
                 return;
             }
             if (!network.serviceNetwork) {
-                logger.error(`service network is not valid for gateway ${this.hostId}`);
+                logger.error(`service network is not valid for gateway ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
                 return;
             }

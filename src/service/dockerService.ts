@@ -42,9 +42,9 @@ ${tcp_listen} ${udp_listen}
         }
         return '';
     }
-    getHostServiceInstanceId(hostId: string, svc: Service) {
+    getGatewayServiceInstanceId(gatewayId: string, svc: Service) {
         let env = `
--e HOST_ID=${hostId}
+-e GATEWAY_ID=${gatewayId}
 -e SERVICE_ID=${svc.id}
 -e INSTANCE_ID=${Util.randomNumberString(16)}`
         return env.replace(/\n/g, ' ');
@@ -56,9 +56,10 @@ ${tcp_listen} ${udp_listen}
         }
     }
     async ipAddr(svc: Service) {
-        await NetworkService.ipAddr('lo', svc.assignedIp);
+        if (svc.assignedIp != '127.0.0.1')
+            await NetworkService.ipAddr('lo', svc.assignedIp);
     }
-    async run(svc: Service, hostId: string, network: string) {
+    async run(svc: Service, gatewayId: string, network: string) {
         logger.info(`starting ferrum service ${svc.name}`)
         let net = network ? `--net=${network}` : '';
         await this.ipAddr(svc);
@@ -66,7 +67,7 @@ ${tcp_listen} ${udp_listen}
         let command = `
 docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumsvc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)} 
 -d ${this.getEnv(svc)}
-${this.getHostServiceInstanceId(hostId, svc)}
+${this.getGatewayServiceInstanceId(gatewayId, svc)}
 ${image}`
         command = command.replace(/\n/g, ' ');
 

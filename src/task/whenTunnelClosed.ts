@@ -7,7 +7,7 @@ import { logger } from "../common";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { ConfigService } from "../service/configService";
 
 
@@ -15,7 +15,7 @@ import { ConfigService } from "../service/configService";
  * when a client disconnects, publish its tunnel key
  * follow and delete all related data
  */
-export class WhenTunnelClosed extends HostBasedTask {
+export class WhenTunnelClosed extends GatewayBasedTask {
 
     protected redisSub: RedisService | null = null
     protected redis: RedisService | null = null;
@@ -29,14 +29,14 @@ export class WhenTunnelClosed extends HostBasedTask {
     private async removeFromList(tunnelId: string) {
         try {
             //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnelId);
+            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnelId);
         } catch (ignored) {
             logger.error(ignored);
         }
     }
 
     async onMessage(channel: string, message: string) {
-        const channelName = `/tunnel/closed/${this.hostId}`;
+        const channelName = `/tunnel/closed/${this.gatewayId}`;
         if (channel !== channelName) return;
         let tunnelId = undefined;
         try {
@@ -44,7 +44,7 @@ export class WhenTunnelClosed extends HostBasedTask {
             const tunnel = await this.redis?.hgetAll(`/tunnel/id/${message}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             tunnelId = tunnel.id;
-            if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
+            if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun) {
                 // delete tunnel data from redis
                 await this.redis?.delete(`/tunnel/id/${message}`);
@@ -89,10 +89,10 @@ export class WhenTunnelClosed extends HostBasedTask {
     }
     async start(): Promise<void> {
         try {
-            await this.readHostId();
+            await this.readGatewayId();
             this.redis = this.createRedisClient();
             this.redisSub = this.createRedisClient();
-            await this.redisSub.subscribe(`/tunnel/closed/${this.hostId}`);
+            await this.redisSub.subscribe(`/tunnel/closed/${this.gatewayId}`);
             await this.redisSub.onMessage(async (channel, message) => {
                 await this.onMessage(channel, message);
             });

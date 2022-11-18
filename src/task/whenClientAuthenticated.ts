@@ -7,7 +7,7 @@ import { logger } from "../common";
 import { Tunnel } from "../model/tunnel";
 import { HelperService } from "../service/helperService";
 import { NetworkService } from "../service/networkService";
-import { HostBasedTask } from "./hostBasedTask";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 import { ConfigService } from "../service/configService";
 
 
@@ -15,7 +15,7 @@ import { ConfigService } from "../service/configService";
  * when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
  * and this task executes interface up, and routing
  */
-export class WhenClientAuthenticated extends HostBasedTask {
+export class WhenClientAuthenticated extends GatewayBasedTask {
 
     private redisSub: RedisService | null = null
     private redis: RedisService | null = null;
@@ -29,22 +29,22 @@ export class WhenClientAuthenticated extends HostBasedTask {
     private async removeFromList(tunnelId: string) {
         try {
             //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnelId);
+            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnelId);
         } catch (ignored) {
             logger.error(ignored);
         }
     }
 
     async onMessage(channel: string, message: string) {
-        const channelName = `/tunnel/configure/${this.hostId}`;
+        const channelName = `/tunnel/configure/${this.gatewayId}`;
         if (channel !== channelName) return;
         let tunnelId = undefined;
         try {
-            logger.info(`configure tunnel: ${message} on host: ${this.hostId}`)
+            logger.info(`configure tunnel: ${message} on host: ${this.gatewayId}`)
             const tunnel = await this.redis?.hgetAll(`/tunnel/id/${message}`) as Tunnel;
             HelperService.isValidTunnel(tunnel);
             tunnelId = tunnel.id;
-            if (tunnel.hostId != this.hostId) return;//this is important only tunnels in current machine
+            if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork && tunnel.trackId) {
                 // interface up and add routing
                 // this code is also in checkNotAuthenticatedClientTask.ts
@@ -54,7 +54,7 @@ export class WhenClientAuthenticated extends HostBasedTask {
                 await NetworkService.addToConntrackClient(tunnel.tun, tunnel.trackId);
             }
             //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.hostId}`, tunnel.id || '');
+            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnel.id || '');
 
         } catch (err) {
             logger.error(err);
@@ -67,10 +67,10 @@ export class WhenClientAuthenticated extends HostBasedTask {
     }
     async start(): Promise<void> {
         try {
-            await this.readHostId();
+            await this.readGatewayId();
             this.redis = this.createRedisClient();
             this.redisSub = this.createRedisClient();
-            await this.redisSub.subscribe(`/tunnel/configure/${this.hostId}`);
+            await this.redisSub.subscribe(`/tunnel/configure/${this.gatewayId}`);
             await this.redisSub.onMessage(async (channel, message) => {
                 await this.onMessage(channel, message);
             });
