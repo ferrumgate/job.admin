@@ -17,8 +17,7 @@ async function main() {
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
     const redisOptions: RedisOptions = { host: redisHost, password: redisPassword };
-    const configPath = '/etc/ferrumgate/config';
-    const configService = new ConfigService(configPath, redisHost, redisPassword);
+    const configService = new ConfigService(redisHost, redisPassword);
     await configService.start();
 
     const dockerService = new DockerService();

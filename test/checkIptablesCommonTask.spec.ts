@@ -33,17 +33,21 @@ describe('checkIptablesCommonTask', () => {
 
     it('start', async () => {
 
-        class MockConfigService extends ConfigService {
+        class MockConfigService45 extends ConfigService {
+            constructor(redisHost?: string) {
+                super(redisHost, undefined);
 
+            }
         }
 
-        class Mock extends CheckIptablesCommon {
+        class Mock55 extends CheckIptablesCommon {
             isConfiguredNetwork = false;
             public isCheckCalled = false;
             constructor(protected redisOptions: RedisOptions, config: ConfigService) {
                 super(redisOptions, config);
 
             }
+
             public override async check(): Promise<void> {
                 this.isCheckCalled = true;
                 super.check();
@@ -52,9 +56,10 @@ describe('checkIptablesCommonTask', () => {
 
 
         }
-        fs.writeFileSync('/tmp/x.conf', 'gatewayId=123');
-        const config = new MockConfigService('/tmp/x.conf', 'localhost:6379') as unknown as ConfigService;
-        const task = new Mock({ host: 'localhost:6379' }, config);
+
+        const config = new MockConfigService45('localhost:6379') as unknown as ConfigService;
+        config.setGatewayId('123');
+        const task = new Mock55({ host: 'localhost:6379' }, config);
         await task.start();
         expect(task.isCheckCalled).to.be.true;
         task.isCheckCalled = false;

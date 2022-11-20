@@ -5,13 +5,14 @@
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisOptions, RedisService } from '../src/service/redisService';
 import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
 import { basename } from 'path';
 import { utils } from 'mocha';
 import fspromise from 'fs/promises';
 import fs from 'fs';
 import { ConfigService } from '../src/service/configService';
+
 
 
 chai.use(chaiHttp);
@@ -29,13 +30,20 @@ describe('WhenClientAuthenticated', () => {
     it('task will start after 5 seconds because no config file exits', async () => {
 
         class Mock extends WhenClientAuthenticated {
+            /**
+             *
+             */
+            constructor(redis: RedisOptions, config: ConfigService) {
+                super(redis, config);
+
+            }
             counter = 0;
             override async start(): Promise<void> {
                 this.counter++;
                 await super.start();
             }
         }
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
         const task = new Mock({ host: 'localhost:6380' }, configService);
         await task.start();
         await Util.sleep(6000);//wait for 5 seconds
@@ -45,9 +53,12 @@ describe('WhenClientAuthenticated', () => {
     }).timeout(10000)
 
     it('task will start after 5 seconds because no redis exits', async () => {
-        await fspromise.mkdir(tmpfolder);
-        await fspromise.writeFile(`${tmpfolder}/config`, 'gatewayId=1234');
+
         class Mock extends WhenClientAuthenticated {
+            constructor(redis: RedisOptions, config: ConfigService) {
+                super(redis, config);
+
+            }
             counter = 0;
             host = '';
             override async start(): Promise<void> {
@@ -61,9 +72,10 @@ describe('WhenClientAuthenticated', () => {
                 this.host = this.gatewayId;
             }
         }
-        let randomFilename = `/tmp/${Util.randomNumberString()}`;
-        await fspromise.writeFile(randomFilename, 'gatewayId=1234');
-        const configService = new ConfigService(randomFilename);
+
+
+        const configService = new ConfigService();
+        await configService.setGatewayId('1234');
         const task = new Mock({ host: 'localhost:6380' }, configService);
         await task.start();
         await Util.sleep(6000);//wait for 5 seconds
@@ -75,10 +87,13 @@ describe('WhenClientAuthenticated', () => {
 
 
     it('onMessageExecuted', async () => {
-        await fspromise.mkdir(tmpfolder);
-        await fspromise.writeFile(`${tmpfolder}/config`, 'gatewayId=1234');
+
         class Mock extends WhenClientAuthenticated {
 
+            constructor(redis: RedisOptions, config: ConfigService) {
+                super(redis, config);
+
+            }
             isCalled = false;
 
             override async onMessage(channel: string, message: string): Promise<void> {
@@ -86,9 +101,10 @@ describe('WhenClientAuthenticated', () => {
                 await super.onMessage(channel, message);
             }
         }
-        let randomFilename = `/tmp/${Util.randomNumberString()}`;
-        await fspromise.writeFile(randomFilename, 'gatewayId=1234');
-        const configService = new ConfigService(randomFilename);
+
+
+        const configService = new ConfigService();
+        await configService.setGatewayId('1234');
         const task = new Mock({ host: 'localhost:6379' }, configService);
         await task.start();
         const redis = new RedisService('localhost:6379');
