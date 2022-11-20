@@ -44,7 +44,7 @@ export class CheckServices extends GatewayBasedTask {
     }
 
 
-    public async checkServices(immediately = false) {
+    public async checkServices() {
 
         try {
 
@@ -89,16 +89,26 @@ export class CheckServices extends GatewayBasedTask {
     }
     async compare(running: Pod[], services: Service[]) {
         await this.readGatewayId();
+        let restartList = [];
         for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
             if (serviceId) {
                 const service = services.find(x => x.id == serviceId)
+                const lastUpdate = run.details?.Config?.Labels.Ferrum_Svc_LastUpdate;
                 if (!service || !service.isEnabled) {
-                    logger.warn(`closing pod ${run.name}`);
+                    logger.warn(`closing pod ${run.name} status: ${service?.isEnabled} update:${service?.updateDate}`);
                     try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
-                }
+
+                } else
+                    if (service.updateDate != lastUpdate) {
+                        logger.warn(`closing pod ${run.name} restart needs, status: ${service?.isEnabled} update:${service?.updateDate}!=${lastUpdate}`);
+                        try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                        restartList.push(service);
+
+                    }
             }
+
         }
         const secureserver = running.find(x => x.image.includes('secure.server') || x.name.includes('secure.server'));
         if (!secureserver) {
@@ -114,6 +124,15 @@ export class CheckServices extends GatewayBasedTask {
                     logger.error(ignore);
                 }
             }
+        }
+        for (const svc of restartList) {
+            logger.info(`restart service found ${svc.name}`);
+            try {
+                await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`);
+            } catch (ignore: any) {
+                logger.error(ignore);
+            }
+
         }
 
 

@@ -23,7 +23,7 @@ const expect = chai.expect;
 
 const tmpfolder = '/tmp/ferrumtest';
 describe('checkServices', () => {
-    const configFilePath = '/tmp/abc';
+
     beforeEach(async () => {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
@@ -31,9 +31,8 @@ describe('checkServices', () => {
             if (pod.name.startsWith('ferrumsvc'))
                 await docker.stop(pod);
         }
-        if (fs.existsSync(configFilePath))
-            fs.rmSync(configFilePath)
-        fs.writeFileSync(configFilePath, 'gatewayId=231a0932');
+
+
     })
 
 
@@ -86,7 +85,8 @@ describe('checkServices', () => {
     it('closeAllServices', async () => {
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-        const configService = new ConfigService(configFilePath, redisoption.host);
+        const configService = new ConfigService(redisoption.host);
+        await configService.setGatewayId('231a0932');
         const checkservices = new CheckServices(redisoption, configService, docker);
 
         await docker.run(service, '231a0932', 'host');
@@ -100,9 +100,13 @@ describe('checkServices', () => {
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
         class MockConfig extends ConfigService {
+            constructor() {
+                super();
 
+            }
         }
-        const configService = new ConfigService(configFilePath, redisoption.host);
+        const configService = new ConfigService(redisoption.host);
+        await configService.setGatewayId('231a0932');
         const checkservices = new CheckServices(redisoption, configService, docker);
         let closeAllCalled = false;
         const realcloseAllServices = checkservices.closeAllServices;
@@ -193,14 +197,15 @@ describe('checkServices', () => {
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
 
-        const configService = new ConfigService(configFilePath, redisoption.host);
+        const configService = new ConfigService(redisoption.host);
+        await configService.setGatewayId('231a0932');
         const checkservices = new CheckServices(redisoption, configService, docker);
         const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
         const isWorking = Number(isWorkingStr);
         if (isWorking) {
             await Util.exec(`docker stop secure.server`);
         }
-        await Util.exec("docker run -d --rm --name secure.server nginx");
+        await Util.exec(`docker run -d --rm --name secure.server -p 9393:80 nginx`);
         //start 1 services
         await docker.run(service, 'abc', 'host');
 

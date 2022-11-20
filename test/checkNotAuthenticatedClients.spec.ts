@@ -27,13 +27,15 @@ describe('checkNotAuthenticatedClients', () => {
         await simpleRedis.flushAll();
         if (fs.existsSync(tmpfolder))
             await fs.rmSync(tmpfolder, { recursive: true, force: true });
-        fs.writeFileSync('/tmp/config', 'gatewayId=123')
+
     })
 
     it('configure', async () => {
 
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
+        await configService.setGatewayId('123');
         class Mock extends CheckNotAuthenticatedClients {
+
             isConfiguredNetwork = false;
             constructor(protected redisOptions: RedisOptions, configFilePath: string) {
                 super(redisOptions, configService);

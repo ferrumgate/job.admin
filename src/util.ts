@@ -12,6 +12,7 @@ export class Util {
     static async exec(cmd: string) {
         return new Promise((resolve, reject) => {
             childprocess.exec(cmd, (error, stdout, stderr) => {
+
                 if (error)
                     reject(error);
                 else
@@ -24,6 +25,7 @@ export class Util {
                             resolve('');
 
             })
+
         })
     }
 

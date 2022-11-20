@@ -26,15 +26,14 @@ describe('configService', () => {
     beforeEach(async () => {
         const simpleRedis = new RedisService('localhost:6379');
         await simpleRedis.flushAll();
-        if (fs.existsSync('/tmp/abc'))
-            fs.unlinkSync('/tmp/abc');
+
 
     })
 
 
 
     it('createRequest', async () => {
-        const config = new ConfigService('/tmp/abc', 'localhost:6379');
+        const config = new ConfigService('localhost:6379');
         const request = await config.createRequest({ id: '1', func: 'getServiceId', gatewayId: '123', params: [] }, 1000)
         const result = await request.promise;
         expect(result.id).to.equal('1');
@@ -56,26 +55,29 @@ describe('configService', () => {
     it('execute', async () => {
         const simpleRedis = new RedisService('localhost:6379');
         const simpleRedis2 = new RedisService('localhost:6379');
-        fs.writeFileSync('/tmp/abc', 'gatewayId=123');
-        const config = new ConfigService('/tmp/abc', 'localhost:6379');
+
+        const config = new ConfigService('localhost:6379');
+        await config.setGatewayId('123');
         await simpleRedis.onMessage(async () => {
             let item = { id: '1', result: 'test' };
             return simpleRedis2.xadd('/query/gateway/123', { data: Buffer.from(JSON.stringify(item)).toString('base64') });
         })
         await simpleRedis.subscribe('/query/config');
         await config.start();
+        await Util.sleep(1000);
         const response = await config.execute<string>({ id: '1', func: 'getSomething', gatewayId: '1', params: ['1'] });
         await Util.sleep(1000);
         expect(response).to.equal('test');
         await config.stop();
 
-    }).timeout(10000)
+    }).timeout(150000)
 
     it('listenStream', async () => {
         const simpleRedis = new RedisService('localhost:6379');
-        fs.writeFileSync('/tmp/abc', 'gatewayId=123');
 
-        const config = new ConfigService('/tmp/abc', 'localhost:6379');
+
+        const config = new ConfigService('localhost:6379');
+        await config.setGatewayId('123');
         await config.start();
         let isDataReceived = false;
         config.eventEmitter.on('data', () => {

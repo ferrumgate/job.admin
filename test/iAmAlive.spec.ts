@@ -49,7 +49,7 @@ describe('iAmAlive', () => {
 
         }
 
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
         const alive = new Mock({ host: 'localhost:6379' }, configService);
         alive.create();
         await alive.check();

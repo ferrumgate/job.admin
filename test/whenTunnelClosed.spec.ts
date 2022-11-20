@@ -5,7 +5,7 @@
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
+import { RedisOptions, RedisService } from '../src/service/redisService';
 import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
 import { basename } from 'path';
 import { utils } from 'mocha';
@@ -59,7 +59,10 @@ describe('whenTunnelClosed', () => {
 
         class Mock extends WhenTunnelClosed {
 
+            constructor(redis: RedisOptions, config: ConfigService) {
+                super(redis, config);
 
+            }
 
             protected override async readGatewayId(): Promise<void> {
                 this.gatewayId = 'agatewayid';
@@ -74,7 +77,7 @@ describe('whenTunnelClosed', () => {
 
         }
 
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
         const task = new Mock({ host: 'localhost:6379' }, configService);
         task.connectRedis();
         task.setGatewayId(tunnel.gatewayId || '');

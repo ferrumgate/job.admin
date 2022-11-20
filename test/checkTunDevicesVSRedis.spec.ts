@@ -35,6 +35,7 @@ describe('checkTunDevicesVSRedis', () => {
     it('check', async () => {
 
         class Mock extends CheckTunDevicesVSRedis {
+
             /**
              *
              */
@@ -63,7 +64,7 @@ describe('checkTunDevicesVSRedis', () => {
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
         await simpleRedis.set(`/gateway/myhost123/tun/ferrum1`, 1);
 
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
         const checker = new Mock({ host: 'localhost:6379' }, configService);
         await checker.check();
         Util.exec = functionBackup;

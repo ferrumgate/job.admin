@@ -16,6 +16,6 @@ export abstract class GatewayBasedTask extends BaseTask {
     }
 
     protected async readGatewayId() {
-        this.gatewayId = await this.configService.readGatewayId();
+        this.gatewayId = await this.configService.getGatewayId();
     }
 }

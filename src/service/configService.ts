@@ -51,10 +51,10 @@ export class ConfigService {
     private isWorking = false;
     private streamPos = '$';
     public requestList = new Map<string, RequestItem>();
-    constructor(protected configFilePath: string, protected redisHost?: string, protected redisPass?: string) {
+    constructor(protected redisHost?: string, protected redisPass?: string) {
         this.redis = this.createRedisClient();
         this.redisStream = this.createRedisClient();
-
+        this.gatewayId = process.env.GATEWAY_ID || '';
     }
     protected createRedisClient() {
         return new RedisService(this.redisHost, this.redisPass);
@@ -63,27 +63,20 @@ export class ConfigService {
 
 
 
-    async readGatewayId() {
-
-
-        if (this.gatewayId) return this.gatewayId;
-
-        const file = (await fsp.readFile(this.configFilePath)).toString();
-        const hostline = file.split('\n').find(x => x.startsWith('gatewayId='));
-        if (!hostline) throw new Error(`no gateway id found in config ${this.configFilePath}`);
-        const parts = hostline.split('=');
-        if (parts.length != 2) throw new Error(`no gateway id found in config ${this.configFilePath}`);
-        this.gatewayId = parts[1];
+    async getGatewayId() {
         if (!this.gatewayId)
-            throw new Error(`no gateway id found in config ${this.configFilePath}`);
+            throw new Error('gateway id is empty');
         return this.gatewayId;
+    }
+    async setGatewayId(val: string) {
+        this.gatewayId = val;
     }
 
     async listenStream() {
         while (this.isWorking) {
 
             try {
-                await this.readGatewayId();
+                await this.getGatewayId();
                 const items = await this.redisStream?.xread(`/query/gateway/${this.gatewayId}`, 10000, this.streamPos, 2000);
                 if (items) {
                     for (const item of items) {
@@ -151,7 +144,7 @@ export class ConfigService {
         this.redisStream = null;
     }
 
-    async createRequest(msg: ConfigRequest, timeout = 5000) {
+    async createRequest(msg: ConfigRequest, timeout = 10000) {
 
         let pr = new Promise<ConfigResponse>((resolve, reject) => {
             const onData = async (data: ConfigResponse) => {
@@ -176,7 +169,7 @@ export class ConfigService {
     }
 
     async execute<T>(msg: ConfigRequest) {
-        await this.readGatewayId();
+        await this.getGatewayId();
         if (!this.gatewayId)
             throw new Error(`gatewayId not found`);
 

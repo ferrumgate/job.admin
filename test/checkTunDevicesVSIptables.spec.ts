@@ -50,7 +50,7 @@ describe('checkTunDevicesVSIptables', () => {
                 return ''
             }
         }
-        const configService = new ConfigService('/tmp/config');
+        const configService = new ConfigService();
         const checker = new CheckTunDevicesVSIptables({ host: 'localhost:6379' }, configService);
         await checker.check();
         Util.exec = functionBackup;
