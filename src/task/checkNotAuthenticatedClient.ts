@@ -96,7 +96,7 @@ export class CheckNotAuthenticatedClients extends GatewayBasedTask {
     public override async stop() {
         try {
             if (this.timer)
-                await clearIntervalAsync(this.timer);
+                clearIntervalAsync(this.timer);
             this.timer = null;
             await this.redis?.disconnect();
 

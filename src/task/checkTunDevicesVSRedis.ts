@@ -65,7 +65,7 @@ export class CheckTunDevicesVSRedis extends GatewayBasedTask {
     public override async stop(): Promise<void> {
         try {
             if (this.timer)
-                await clearIntervalAsync(this.timer);
+                clearIntervalAsync(this.timer);
             this.timer = null;
             await this.redis?.disconnect();
 

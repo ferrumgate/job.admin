@@ -27,7 +27,7 @@ export class DockerService {
 
 
             let env = `
--e LOG_LEVEL=${process.env.LOG_LEVEL || 'INFO'}
+-e LOG_LEVEL=${process.env.LOG_LEVEL || 'info'}
 -e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'} 
 ${redis_pass}
 -e RAW_DESTINATION_HOST=${svc.host}
