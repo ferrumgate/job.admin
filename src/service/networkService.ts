@@ -108,7 +108,7 @@ export class NetworkService {
                 logger.info(log)
         }
         // check input and forward tables
-        logger.info(`check iptables ferrum+ rules in INPUT and FORWARD`);
+        logger.info(`check iptables ferrum+ rules in INPUT`);
         let tunCountStr = await Util.exec(`iptables -S INPUT|grep ferrum+|wc -l`);
         let tunCount = Number(tunCountStr);
 
@@ -129,26 +129,17 @@ export class NetworkService {
                 logger.info(log)
         }
 
-        /*  tunCountStr = await Util.exec(`iptables -S FORWARD|grep ferrum+|wc -l`);
-         tunCount = Number(tunCountStr);
- 
-         networkCountStr = await Util.exec(`iptables -S FORWARD|grep ferrum+|grep '${destinationNetwork}'|wc -l`);
-         networkCount = Number(networkCountStr);
-         if (!networkCount && tunCount) {//network changed, delete first
-             logger.info("service network changed to " + destinationNetwork);
-             let rule = await Util.exec(`iptables -S FORWARD|grep ferrum+`) as string;
-             rule = rule.replace('-A', '-D')
-             await Util.exec(`iptables ${rule}`);
-             tunCount = 0;
-         }
- 
-         if (tunCount == 0) {
-             logger.info(`no rule for ferrum+ FORWARD`);
-             let log = await Util.exec(`iptables -A FORWARD -i ferrum+  ! -d ${destinationNetwork} -j DROP`);
-             if (log)
-                 logger.info(log)
-         } */
+        logger.info(`check iptables FORWARD all DROP`);
+        //set policy drop
+        tunCountStr = await Util.exec(`iptables -S FORWARD|grep '\\-P FORWARD DROP'|wc -l`);
+        tunCount = Number(tunCountStr);
 
+        if (tunCount == 0) {
+            logger.info(`no rule for ferrum+ FORWARD`);
+            let log = await Util.exec(`iptables -P FORWARD DROP`);
+            if (log)
+                logger.info(log)
+        }
 
     }
     static async blockToIptablesCommon() {

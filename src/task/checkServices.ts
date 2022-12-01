@@ -170,7 +170,7 @@ export class CheckServices extends GatewayBasedTask {
     public override async stop(): Promise<void> {
         try {
             if (this.timerCheck)
-                await clearIntervalAsync(this.timerCheck);
+                clearIntervalAsync(this.timerCheck);
             this.timerCheck = null;
 
 
