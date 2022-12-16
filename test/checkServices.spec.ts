@@ -28,7 +28,7 @@ describe('checkServices', () => {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
         for (const pod of pods) {
-            if (pod.name.startsWith('ferrumsvc'))
+            if (pod.name.startsWith('ferrumgate-svc'))
                 await docker.stop(pod);
         }
 
@@ -92,7 +92,7 @@ describe('checkServices', () => {
         await docker.run(service, '231a0932', 'host');
         await checkservices.closeAllServices();
         const pods = await docker.getAllRunning();
-        expect(pods.find(x => x.name.includes('ferrumsvc'))).to.be.undefined;
+        expect(pods.find(x => x.name.includes('ferrumgate-svc'))).to.be.undefined;
 
     }).timeout(30000)
 
@@ -213,7 +213,7 @@ describe('checkServices', () => {
         await checkservices.compare(runnings, [service]);
 
         const runnings2 = await docker.getAllRunning();
-        expect(runnings2.filter(x => x.name.includes('ferrumsvc')).length).to.equal(1);
+        expect(runnings2.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
 
         await checkservices.closeAllServices();
         // start 2 services, 1 of them will be stoped
@@ -226,7 +226,7 @@ describe('checkServices', () => {
         await checkservices.compare(runnings3, [service]);
 
         const runnings4 = await docker.getAllRunning();
-        expect(runnings4.filter(x => x.name.includes('ferrumsvc')).length).to.equal(1);
+        expect(runnings4.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
 
         await checkservices.closeAllServices();
 
@@ -235,7 +235,7 @@ describe('checkServices', () => {
         await checkservices.compare(runnings5, [service]);
 
         const runnings6 = await docker.getAllRunning();
-        expect(runnings6.filter(x => x.name.includes('ferrumsvc')).length).to.equal(1);
+        expect(runnings6.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
 
         await checkservices.closeAllServices();
 

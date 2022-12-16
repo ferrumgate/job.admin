@@ -32,7 +32,7 @@ describe('dockerService', () => {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
         for (const pod of pods) {
-            if (pod.name.startsWith('ferrumsvc'))
+            if (pod.name.startsWith('ferrumgate-svc'))
                 await docker.stop(pod);
         }
     }
@@ -99,7 +99,7 @@ describe('dockerService', () => {
         const docker = new Mock33();
         const result = await docker.run(svc, '231a0932', 'host');
         expect(docker.ip).to.equal('an ip');
-        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name  ferrumsvc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
+        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name  ferrumgate-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
 
 
     }).timeout(10000)
@@ -210,13 +210,13 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
         await docker.run(svc, '231a0932', 'host');
         delete process.env.FERRUM_IMAGE;
         const pods = await docker.getAllRunning();
-        const pod = pods.find(x => x.name.includes('ferrumsvc'));
+        const pod = pods.find(x => x.name.includes('ferrumgate-svc'));
         expect(pod).exist;
         if (pod)
             await docker.stop(pod);
 
         const pods1 = await docker.getAllRunning();
-        const pod2 = pods1.find(x => x.name.includes('ferrumsvc'));
+        const pod2 = pods1.find(x => x.name.includes('ferrumgate-svc'));
         expect(pod2).not.exist;
 
 

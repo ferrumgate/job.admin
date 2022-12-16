@@ -35,7 +35,7 @@ export class CheckServices extends GatewayBasedTask {
     public async closeAllServices() {
         const services = await this.dockerService.getAllRunning();
         for (const svc of services) {
-            if (svc.name.startsWith('ferrumsvc'))
+            if (svc.name.startsWith('ferrumgate-svc'))
                 await this.dockerService.stop(svc)
         }
     }
@@ -90,9 +90,9 @@ export class CheckServices extends GatewayBasedTask {
     async compare(running: Pod[], services: Service[]) {
         await this.readGatewayId();
         let restartList = [];
-        for (const run of running.filter(x => x.name.startsWith('ferrumsvc'))) {//check running services that must stop
+        for (const run of running.filter(x => x.name.startsWith('ferrumgate-svc'))) {//check running services that must stop
 
-            const serviceId = run.name.replace('ferrumsvc', '').split('-')[2];
+            const serviceId = run.name.replace('ferrumgate-svc', '').split('-')[2];
             if (serviceId) {
                 const service = services.find(x => x.id == serviceId)
                 const lastUpdate = run.details?.Config?.Labels.Ferrum_Svc_LastUpdate;
@@ -115,7 +115,7 @@ export class CheckServices extends GatewayBasedTask {
             throw new Error(`secure server pod not running`);
         }
         for (const svc of services.filter(x => x.isEnabled)) {
-            const run = running.find(x => x.name.startsWith('ferrumsvc') && x.name.includes(`-${svc.id}-`))
+            const run = running.find(x => x.name.startsWith('ferrumgate-svc') && x.name.includes(`-${svc.id}-`))
             if (!run) {//not running 
                 logger.info(`not running service found ${svc.name}`);
                 try {

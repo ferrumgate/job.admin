@@ -63,7 +63,7 @@ ${tcp_listen} ${udp_listen}
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
         let command = `
-docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumsvc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
+docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
 ${this.getLabels(svc)} 
 -d ${this.getEnv(svc)}
 ${this.getGatewayServiceInstanceId(gatewayId, svc)}
