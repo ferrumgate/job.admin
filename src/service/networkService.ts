@@ -1,5 +1,5 @@
-import { logger } from "../common";
-import { Util } from "../util";
+import { logger, Util } from "rest.portal";
+
 
 
 export class NetworkService {

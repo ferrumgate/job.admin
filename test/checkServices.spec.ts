@@ -4,17 +4,12 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-
-import fs from 'fs';
-import { RedisOptions } from "../src/service/redisService";
+import { Gateway, Network, Service, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
 import { ConfigService } from '../src/service/configService';
 import { DockerService } from '../src/service/dockerService';
-import { Service } from '../src/model/service';
-import { Network } from '../src/model/network';
-import { Gateway } from '../src/model/network';
 import { CheckServices } from '../src/task/checkServices';
-import { checkPrime } from 'crypto';
+
 
 
 
@@ -74,6 +69,7 @@ describe('checkServices', () => {
             tcp: 3306, assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
 

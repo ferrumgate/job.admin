@@ -1,8 +1,8 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
+import { logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * after a tun device created, we added a new iptables rule

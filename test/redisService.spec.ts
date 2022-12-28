@@ -4,9 +4,7 @@
 
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-import { RedisService } from '../src/service/redisService';
-
+import { RedisService, Util } from 'rest.portal';
 
 
 chai.use(chaiHttp);

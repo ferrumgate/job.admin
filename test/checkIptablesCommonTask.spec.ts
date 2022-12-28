@@ -4,17 +4,16 @@
 
 import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-import { RedisOptions, RedisService } from '../src/service/redisService';
+
 import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
 import { basename } from 'path';
 import { utils } from 'mocha';
 import fspromise from 'fs/promises';
 import fs from 'fs';
-import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
-import { Tunnel } from '../src/model/tunnel';
 import { ConfigService } from '../src/service/configService';
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
+import { RedisService, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
 
 
 

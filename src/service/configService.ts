@@ -1,13 +1,8 @@
-import { Util } from "../util";
-import { RedisService } from "./redisService";
+
 import fsp from 'fs/promises';
 import { timeStamp } from "console";
-import { logger } from "../common";
 import { EventEmitter } from "stream";
-import { Gateway } from "../model/network";
-import { Network } from "../model/network";
-import { Service } from "../model/service";
-import { ConfigEvent } from "../model/configEvent";
+import { ConfigEvent, Gateway, logger, Network, RedisService, Service, Util } from "rest.portal";
 
 /**
  * @summary config query over messages

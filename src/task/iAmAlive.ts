@@ -1,9 +1,11 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
+
+
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
 import os from 'os';
+import { logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * 

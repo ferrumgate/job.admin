@@ -1,8 +1,5 @@
-import { Util } from "../util";
-import { Service } from "../model/service";
+import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
-import { logger } from "../common";
-import { util } from "chai";
 
 export interface Pod {
     id: string, image: string, name: string; details?: any;

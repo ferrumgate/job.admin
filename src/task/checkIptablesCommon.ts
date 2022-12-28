@@ -1,9 +1,9 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { ConfigService } from "../service/configService";
-import { ConfigEvent } from "../model/configEvent";
+import { ConfigEvent, logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
+
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * check common rules in iptables
@@ -13,7 +13,6 @@ export class CheckIptablesCommon extends GatewayBasedTask {
 
     protected timer: any | null = null;
     protected redis: RedisService | null = null;
-    private lastCheckTime2 = new Date(1).getTime();
     constructor(protected redisOptions: RedisOptions, protected configService: ConfigService) {
         super(configService);
         this.configService.eventEmitter.on('configChanged', (evt: ConfigEvent) => {
@@ -70,7 +69,6 @@ export class CheckIptablesCommon extends GatewayBasedTask {
                 return;
             }
             await NetworkService.addToIptablesCommon(network.serviceNetwork);
-            this.lastCheckTime2 = new Date().getTime();
 
         } catch (err) {
             logger.error(err);

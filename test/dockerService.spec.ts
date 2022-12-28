@@ -2,22 +2,13 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
 
-import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
-import { basename } from 'path';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
 import fs from 'fs';
-import { Tunnel } from '../src/model/tunnel';
-import { WhenTunnelClosed } from '../src/task/whenTunnelClosed';
-import { IAmAlive } from '../src/task/iAmAlive';
-import { RedisOptions, RedisService } from "../src/service/redisService";
-import { ConfigService } from '../src/service/configService';
+import { Service, Util } from 'rest.portal';
 import { DockerService } from '../src/service/dockerService';
-import { Service } from '../src/model/service';
+
 
 
 chai.use(chaiHttp);
@@ -57,6 +48,7 @@ describe('dockerService', () => {
             tcp: 3306, assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         return service;

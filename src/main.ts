@@ -1,8 +1,9 @@
-import { logger } from "./common"
+
+import { logger } from "rest.portal";
+import { RedisOptions } from "./model/redisOptions";
 import { ConfigService } from "./service/configService";
 import { DockerService } from "./service/dockerService";
 import { NetworkService } from "./service/networkService";
-import { RedisOptions } from "./service/redisService";
 import { CheckIptablesCommon } from "./task/checkIptablesCommon";
 import { CheckNotAuthenticatedClients } from "./task/checkNotAuthenticatedClient";
 import { CheckServices } from "./task/checkServices";
@@ -12,7 +13,9 @@ import { IAmAlive } from "./task/iAmAlive";
 import { WhenClientAuthenticated } from "./task/whenClientAuthenticated";
 import { WhenTunnelClosed } from "./task/whenTunnelClosed";
 
+
 async function main() {
+
 
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
