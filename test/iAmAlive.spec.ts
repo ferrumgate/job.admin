@@ -49,7 +49,7 @@ describe('iAmAlive', () => {
         await alive.check();
 
         const simpleRedis = new RedisService('localhost:6379');
-        const host = await simpleRedis.hgetAll('/gateway/alive/id/myhost123');
+        const host = await simpleRedis.hgetAll('/alive/gateway/id/myhost123');
         expect(host).exist;
         expect(host.lastSeen).exist;
 

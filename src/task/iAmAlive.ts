@@ -32,7 +32,7 @@ export class IAmAlive extends GatewayBasedTask {
             logger.info(`write I am alive to redis global`);
             await this.readGatewayId();
             //set to the global
-            let hostkey = `/gateway/alive/id/${this.gatewayId}`;
+            let hostkey = `/alive/gateway/id/${this.gatewayId}`;
             await this.redis?.hset(hostkey, {
                 id: this.gatewayId,
                 arch: os.arch(),

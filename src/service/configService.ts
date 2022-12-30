@@ -1,8 +1,8 @@
 
 import fsp from 'fs/promises';
 import { timeStamp } from "console";
-import { EventEmitter } from "stream";
 import { ConfigEvent, Gateway, logger, Network, RedisService, Service, Util } from "rest.portal";
+import EventEmitter from 'node:events';
 
 /**
  * @summary config query over messages
