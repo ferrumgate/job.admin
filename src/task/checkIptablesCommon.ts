@@ -1,8 +1,11 @@
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
-import { ConfigEvent, logger, RedisService } from "rest.portal";
+import { ConfigEvent, logger, Network, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
+import { RedisConfigWatchService } from "rest.portal";
+import { BroadcastService } from "../service/broadcastService";
+import { ConfigWatch } from "rest.portal/service/redisConfigService";
+import { Gateway } from "rest.portal";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
@@ -12,22 +15,28 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 export class CheckIptablesCommon extends GatewayBasedTask {
 
     protected timer: any | null = null;
-    protected redis: RedisService | null = null;
-    constructor(protected redisOptions: RedisOptions, protected configService: ConfigService) {
-        super(configService);
-        this.configService.eventEmitter.on('configChanged', (evt: ConfigEvent) => {
-            this.onConfigChanged(evt);
+
+    constructor(protected configService: RedisConfigWatchService, protected bcastService: BroadcastService) {
+        super();
+        this.bcastService.on('configChanged', async (evt: ConfigWatch<any>) => {
+            await this.onConfigChanged(evt);
         })
     }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
-    public async onConfigChanged(event: ConfigEvent) {
-        try {
 
-            if (event.path.startsWith('/gateways') || event.path.startsWith('/networks')) {
-                logger.info(`check immediately common iptable rules`);
-                await this.check();
+    public async onConfigChanged(event: ConfigWatch<any>) {
+        try {
+            //TODO analyze what changed 
+            if (event.path.startsWith('/config/gateways')) {
+                logger.info(`check immediately common iptable rules for gateways`);
+                if (event.val.id == this.gatewayId)
+                    await this.check();
+            }
+            if (event.path.startsWith('/config/networks')) {
+                logger.info(`check immediately common iptable rules for networks`);
+                //TODO analyze what changed
+                const network = await this.configService.getNetworkByGateway(this.gatewayId);
+                if (!network || network.id == event.val.id)
+                    await this.check();
             }
 
         } catch (err) {
@@ -41,7 +50,7 @@ export class CheckIptablesCommon extends GatewayBasedTask {
             //every 30 seconds
             logger.info(`check common ip rules`);
             await this.readGatewayId();
-            const currentGateway = await this.configService.getGatewayById();
+            const currentGateway = await this.configService.getGateway(this.gatewayId);
             if (!currentGateway) {
                 logger.error(`current gateway not found ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
@@ -52,7 +61,7 @@ export class CheckIptablesCommon extends GatewayBasedTask {
                 await NetworkService.blockToIptablesCommon();
                 return;
             }
-            const network = await this.configService.getNetworkByGatewayId();
+            const network = await this.configService.getNetworkByGateway(this.gatewayId);
             if (!network) {
                 logger.error(`current network not found for gateway ${this.gatewayId}`);
                 await NetworkService.blockToIptablesCommon();
@@ -77,7 +86,7 @@ export class CheckIptablesCommon extends GatewayBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
+
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
@@ -88,12 +97,12 @@ export class CheckIptablesCommon extends GatewayBasedTask {
             if (this.timer)
                 clearIntervalAsync(this.timer);
             this.timer = null;
-            await this.redis?.disconnect();
+
 
         } catch (err) {
             logger.error(err);
         } finally {
-            this.redis = null;
+
 
         }
     }

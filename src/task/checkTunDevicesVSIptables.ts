@@ -1,6 +1,6 @@
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
+
 import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -12,14 +12,11 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
     protected timer: any | null = null;
-    protected redis: RedisService | null = null;
     protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
-        super(configService);
+    constructor() {
+        super();
     }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
+
 
     public async check() {
 
@@ -68,7 +65,7 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
+
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
@@ -79,13 +76,8 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
             if (this.timer)
                 clearIntervalAsync(this.timer);
             this.timer = null;
-            await this.redis?.disconnect();
-
         } catch (err) {
             logger.error(err);
-        } finally {
-            this.redis = null;
-
         }
     }
 

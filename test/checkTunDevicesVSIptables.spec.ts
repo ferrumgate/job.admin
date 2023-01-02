@@ -7,8 +7,7 @@ import chaiHttp from 'chai-http';
 import { utils } from 'mocha';
 import fspromise from 'fs/promises';
 import fs from 'fs';
-import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
-import { ConfigService } from '../src/service/configService';
+
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
 import { NetworkService } from '../src/service/networkService';
 import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
@@ -46,8 +45,8 @@ describe('checkTunDevicesVSIptables', () => {
                 return ''
             }
         }
-        const configService = new ConfigService();
-        const checker = new CheckTunDevicesVSIptables({ host: 'localhost:6379' }, configService);
+
+        const checker = new CheckTunDevicesVSIptables();
         await checker.check();
         Util.exec = functionBackup;
         const result = await Util.exec('ls');

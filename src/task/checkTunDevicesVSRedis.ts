@@ -1,7 +1,6 @@
 
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
 import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -14,21 +13,10 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 export class CheckTunDevicesVSRedis extends GatewayBasedTask {
 
     protected timer: any | null = null;
-    protected redis: RedisService | null = null;
+
     protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
-        super(configService);
-    }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
-    private async removeFromList(tunnelId: string) {
-        try {
-            //remove from configure list
-            await this.redis?.sremove(`/tunnel/configure/${this.gatewayId}`, tunnelId);
-        } catch (ignored) {
-            logger.error(ignored);
-        }
+    constructor(protected redis: RedisService) {
+        super();
     }
 
     public async check() {
@@ -57,7 +45,7 @@ export class CheckTunDevicesVSRedis extends GatewayBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
+
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
@@ -73,7 +61,7 @@ export class CheckTunDevicesVSRedis extends GatewayBasedTask {
         } catch (err) {
             logger.error(err);
         } finally {
-            this.redis = null;
+
 
         }
     }

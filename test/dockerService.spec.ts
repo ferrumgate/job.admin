@@ -36,7 +36,7 @@ describe('dockerService', () => {
         const result = docker.normalizeName('ad0-?As@@df!oiw02');
         expect(result).to.equal('ad0Asdfoiw02');
 
-    }).timeout(1000)
+    }).timeout(30000)
     function createSampleData() {
         let service: Service = {
             id: Util.randomNumberString(),

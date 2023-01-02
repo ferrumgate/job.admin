@@ -14,11 +14,7 @@ const expect = chai.expect;
 
 describe('rootPermissions', () => {
     beforeEach(async () => {
-
-
     })
-
-
 
     it('check', async () => {
         let ip = '1.2.3.4';

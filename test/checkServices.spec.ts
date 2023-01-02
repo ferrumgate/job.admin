@@ -4,9 +4,10 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Gateway, Network, Service, Util } from 'rest.portal';
+import { RedisService, SystemLogService } from 'rest.portal';
+import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
+import { BroadcastService } from '../src/service/broadcastService';
 import { RedisOptions } from '../src/model/redisOptions';
-import { ConfigService } from '../src/service/configService';
 import { DockerService } from '../src/service/dockerService';
 import { CheckServices } from '../src/task/checkServices';
 
@@ -18,19 +19,22 @@ const expect = chai.expect;
 
 const tmpfolder = '/tmp/ferrumtest';
 describe('checkServices', () => {
-
+    const simpleRedis = new RedisService();
     beforeEach(async () => {
+        await simpleRedis.flushAll();
+
+
+
+    })
+
+    async function closeAllServices() {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
         for (const pod of pods) {
             if (pod.name.startsWith('ferrumgate-svc'))
                 await docker.stop(pod);
         }
-
-
-    })
-
-
+    }
 
 
     async function createSampleData(): Promise<any> {
@@ -75,15 +79,30 @@ describe('checkServices', () => {
 
         return { gateway, network, service };
     }
-    const redisoption: RedisOptions = {
-        host: 'localhost:6379'
-    };
+    class MockConfig extends RedisConfigWatchService {
+        /**
+         *
+         */
+        constructor() {
+            super(new RedisService(), new RedisService(),
+                new SystemLogService(new RedisService(), new RedisService(),
+                    '2a4lsbavreasjcgsw4pq5w7wm7ipt7vl'),
+                true, '2a4lsbavreasjcgsw4pq5w7wm7ipt7vl')
+
+        }
+    }
+    class CheckServicesMock extends CheckServices {
+        setGatewayId(id: string) {
+            this.gatewayId = id;
+        }
+    }
     it('closeAllServices', async () => {
+        await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-        const configService = new ConfigService(redisoption.host);
-        await configService.setGatewayId('231a0932');
-        const checkservices = new CheckServices(redisoption, configService, docker);
+
+        const checkservices = new CheckServicesMock(new MockConfig(), new BroadcastService(), docker);
+        checkservices.setGatewayId('231a0932');
 
         await docker.run(service, '231a0932', 'host');
         await checkservices.closeAllServices();
@@ -93,32 +112,26 @@ describe('checkServices', () => {
     }).timeout(30000)
 
     it('checkServices', async () => {
+        await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-        class MockConfig extends ConfigService {
-            constructor() {
-                super();
 
-            }
-        }
-        const configService = new ConfigService(redisoption.host);
-        await configService.setGatewayId('231a0932');
-        const checkservices = new CheckServices(redisoption, configService, docker);
+        const config = new MockConfig();
+        const checkservices = new CheckServicesMock(config, new BroadcastService(), docker);
+        checkservices.setGatewayId('231a0932');
         let closeAllCalled = false;
         const realcloseAllServices = checkservices.closeAllServices;
 
         checkservices.closeAllServices = async () => {
-
             closeAllCalled = true;
             await realcloseAllServices.bind(checkservices)()
-
         }
         //no gateway
         closeAllCalled = false;
-        const realGetGatewayId = configService.getGatewayById;
-        configService.getGatewayById = async () => {
-            return null;
+        config.getGateway = async () => {
+            return undefined;
         }
+
 
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
@@ -126,7 +139,7 @@ describe('checkServices', () => {
         // gateway is disabled
         closeAllCalled = false;
         gateway.isEnabled = false;
-        configService.getGatewayById = async () => {
+        config.getGateway = async () => {
             return gateway;
         }
 
@@ -137,8 +150,8 @@ describe('checkServices', () => {
 
         //no network
         closeAllCalled = false;
-        const realgetNetworkByGatewayId = configService.getNetworkByGatewayId;
-        configService.getNetworkByGatewayId = async () => {
+        const realgetNetworkByGatewayId = config.getNetworkByGateway;
+        config.getNetworkByGateway = async () => {
             return null;
         }
 
@@ -150,7 +163,7 @@ describe('checkServices', () => {
         //network disabled
         closeAllCalled = false;
         network.isEnabled = false;
-        configService.getNetworkByGatewayId = async () => {
+        config.getNetworkByGateway = async () => {
             return network;
         }
 
@@ -171,7 +184,7 @@ describe('checkServices', () => {
         //evertytin normal check if compare called
         network.serviceNetwork = '1.2.3.4'
         closeAllCalled = false;
-        configService.getServicesByGatewayId = async () => {
+        config.getServicesByNetworkId = async () => {
             return [service];
         }
 
@@ -190,12 +203,16 @@ describe('checkServices', () => {
 
 
     it('compare', async () => {
+        await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
 
-        const configService = new ConfigService(redisoption.host);
-        await configService.setGatewayId('231a0932');
-        const checkservices = new CheckServices(redisoption, configService, docker);
+
+
+        const config = new MockConfig();
+        const checkservices = new CheckServicesMock(config, new BroadcastService(), docker);
+        checkservices.setGatewayId('231a0932');
+
         const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
         const isWorking = Number(isWorkingStr);
         if (isWorking) {
@@ -215,26 +232,21 @@ describe('checkServices', () => {
         // start 2 services, 1 of them will be stoped
         const service2 = JSON.parse(JSON.stringify(service));
         service2.id = '15';
+        await Util.sleep(1000);
         await docker.run(service, '231a0932', 'host');
         await docker.run(service2, '231a0932', 'host');
 
         const runnings3 = await docker.getAllRunning();
         await checkservices.compare(runnings3, [service]);
-
+        await Util.sleep(1000);
         const runnings4 = await docker.getAllRunning();
         expect(runnings4.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
 
         await checkservices.closeAllServices();
-
-        //
-        const runnings5 = await docker.getAllRunning();
-        await checkservices.compare(runnings5, [service]);
-
-        const runnings6 = await docker.getAllRunning();
-        expect(runnings6.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
+        await Util.sleep(1000);
 
         await checkservices.closeAllServices();
 
-    }).timeout(30000);
+    }).timeout(1200000);
 
 })

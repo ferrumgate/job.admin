@@ -4,7 +4,7 @@
 
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { ConfigService } from '../src/service/configService';
+
 import { CheckTunDevicesVSRedis } from '../src/task/checkTunDevicesVSRedis';
 import { RedisService, Util } from 'rest.portal';
 import { RedisOptions } from '../src/model/redisOptions';
@@ -26,13 +26,6 @@ describe('checkTunDevicesVSRedis', () => {
 
         class Mock extends CheckTunDevicesVSRedis {
 
-            /**
-             *
-             */
-            constructor(redisOption: RedisOptions, configService: ConfigService) {
-                super(redisOption, configService);
-
-            }
             protected override async readGatewayId(): Promise<void> {
                 this.gatewayId = 'myhost123';
             }
@@ -54,8 +47,8 @@ describe('checkTunDevicesVSRedis', () => {
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
         await simpleRedis.set(`/gateway/myhost123/tun/ferrum1`, 1);
 
-        const configService = new ConfigService();
-        const checker = new Mock({ host: 'localhost:6379' }, configService);
+
+        const checker = new Mock(simpleRedis);
         await checker.check();
         Util.exec = functionBackup;
         expect(deleteExecuted).to.be.true;

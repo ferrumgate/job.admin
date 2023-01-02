@@ -47,6 +47,9 @@ ${tcp_listen} ${udp_listen}
     async execute(cmd: string) {
         return await Util.exec(cmd)
     }
+    async executeWithoutError(cmd: string) {
+        return await Util.exec(cmd, false)
+    }
     async ipAddr(svc: Service) {
         if (svc.assignedIp != '127.0.0.1')
             await NetworkService.ipAddr('lo', svc.assignedIp);
@@ -73,6 +76,7 @@ ${image}`
     }
     async inspect(podId: string | string[]) {
         const inspect = await this.execute(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null`) as string;
+        //const inspect = await this.executeWithoutError(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId}`) as string;
 
         try {
             return JSON.parse(inspect);
