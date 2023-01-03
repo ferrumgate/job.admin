@@ -18,12 +18,12 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 export class SystemWatcherTask extends GatewayBasedTask {
 
-    tunnels: NodeCache;
-    isStoping = false;
-    events = new EventEmitter();
-    startTimer: any;
-    allTunnelsLoaded = false;
-    waitList: SystemLog[] = [];
+    protected tunnels: NodeCache;
+    protected isStoping = false;
+
+    protected startTimer: any;
+    protected allTunnelsLoaded = false;
+    protected waitList: SystemLog[] = [];
     constructor(private redis: RedisService,
         private redisConfigService: RedisConfigWatchService,
         private tunnelService: TunnelService,
@@ -87,7 +87,8 @@ export class SystemWatcherTask extends GatewayBasedTask {
             this.allTunnelsLoaded = true;
             logger.info(`all tunnels getted count:${allTunnels.length}`);
             allTunnels.forEach((x: Tunnel) => {
-                this.bcastService.emit('tunnelConfirm', x);
+                if (x.gatewayId == this.gatewayId)
+                    this.bcastService.emit('tunnelConfirm', x);
             })
 
         } catch (err) {
@@ -104,7 +105,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
                 if (ev.path == '/system/tunnel/confirm') {
                     logger.info(`tunnel confirm received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
-                    if (data.id) {
+                    if (data?.id) {
                         this.tunnels.set(data.id, data, 5 * 60 * 1000);
                         if (data.gatewayId == this.gatewayId) {
                             this.bcastService.emit('tunnelConfigure', data);
@@ -114,18 +115,20 @@ export class SystemWatcherTask extends GatewayBasedTask {
                 if (ev.path == '/system/tunnel/alive') {
                     logger.info(`tunnel alive received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
-                    if (data.id && data.gatewayId == this.gatewayId) {
+                    if (data?.id && data.gatewayId == this.gatewayId) {
                         if (this.tunnels.has(data.id))
                             this.tunnels.ttl(data.id, 5 * 60 * 1000);
                     }
                 }
-                this.waitList.unshift();
+                this.waitList.shift();
             }
 
         } catch (err) {
             logger.error(err);
         }
     }
+
+
 
 
 
