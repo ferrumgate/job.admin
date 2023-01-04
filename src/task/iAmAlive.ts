@@ -24,8 +24,8 @@ export class IAmAlive extends GatewayBasedTask {
     public async check() {
 
         try {
-
-            logger.info(`write I am alive to redis global`);
+            if (new Date().getTime() % 5 == 0)//write some times
+                logger.info(`write I am alive to redis`);
             await this.readGatewayId();
             //set to the global
             let hostkey = `/alive/gateway/id/${this.gatewayId}`;

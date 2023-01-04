@@ -44,7 +44,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
 
         this.redisConfigService.watch.on('log', async (data: WatchItem<any>) => {
             //analyze all logs
-
+            logger.info(`log received ${data?.val?.path}`)
             if (data.val.path.startsWith('/system/tunnels')) {
                 this.waitList.push(data.val);
             }
@@ -67,7 +67,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
         this.startTimer = await setIntervalAsync(async () => {
             await this.loadAllTunnels();
             await this.processTunnelEvents();
-        }, 1000)
+        }, 500)
     }
     async stop() {
         this.isStoping = true;
@@ -90,8 +90,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
                 if (x.id && x.gatewayId == this.gatewayId)
                     this.tunnels.set(x.id, x);
             })
-            clearIntervalAsync(this.startTimer);
-            this.startTimer = null;
+
             this.allTunnelsLoaded = true;
             logger.info(`system watcher all tunnels getted count:${allTunnels.length}`);
             allTunnels.forEach((x: Tunnel) => {
@@ -110,9 +109,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
             if (!this.allTunnelsLoaded) return;
             while (this.waitList.length) {
                 const ev = this.waitList[0];
-                logger.info(`log received ${JSON.stringify(ev.val)}`);
                 if (ev.path == '/system/tunnels/confirm') {
-                    logger.info(`tunnel confirm received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id) {
                         this.tunnels.set(data.id, data, 5 * 60 * 1000);
@@ -124,7 +121,6 @@ export class SystemWatcherTask extends GatewayBasedTask {
                     }
                 }
                 if (ev.path == '/system/tunnels/alive') {
-                    logger.info(`tunnel alive received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id && data.gatewayId == this.gatewayId) {
                         if (this.tunnels.has(data.id)) {

@@ -24,7 +24,7 @@ export class WhenTunnelClosed extends GatewayBasedTask {
 
         try {
             await this.readGatewayId();
-            logger.info(`tunnel closed trackId: ${tunnel.trackId}`)
+            logger.info(`whenTunnelClosed tunnel closed trackId: ${tunnel.trackId}`)
 
             if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun) {

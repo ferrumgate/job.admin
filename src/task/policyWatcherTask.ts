@@ -54,6 +54,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
     async tunnelExpired(tun: Tunnel) {
         try {
+            logger.info(`policy watcher tunnel expired tunId:${tun.id}`)
             this.tunnels.delete(tun.id);
             this.isStable();
             await this.lmdbClearTunnel(tun);
@@ -66,39 +67,39 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     async getNetworkAndGateway() {
         const gateway = await this.redisConfigService.getGateway(this.gatewayId);
         if (!gateway) {
-            logger.warn(`policywatcher-> gateway not found`)
+            logger.warn(`policy watcher gateway not found`)
             return {};
         }
         const network = await this.redisConfigService.getNetwork(gateway.networkId || '');
         if (!network) {
-            logger.warn(`policywatcher-> network not found`)
+            logger.warn(`policy watcher network not found`)
             return { gateway: gateway }
         }
         return { gateway: gateway, network: network }
     }
     async tunnelConfirmed(tun: Tunnel) {
         try {
-            logger.info(`policywatcher-> tunnel confirmed trackId: ${tun.trackId}`)
+            logger.info(`policy watcher tunnel confirmed trackId: ${tun.trackId}`)
             this.tunnels.set(tun.id, tun);
             this.isStable();
 
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
-                logger.warn(`policywatcher-> tunnel trackId: ${tun.trackId} network not found`);
+                logger.warn(`policy watcher tunnel trackId: ${tun.trackId} network not found`);
                 await this.lmdbClearTunnel(tun);
                 return;
             }
             const services = await this.redisConfigService.getServicesAll();
             const filtered = services.filter(x => x.networkId == network.id);
             if (!filtered.length) {
-                logger.warn(`policywatcher-> tunnel trackId: ${tun.trackId} services not found`);
+                logger.warn(`policy watcher tunnel trackId: ${tun.trackId} services not found`);
                 await this.lmdbClearTunnel(tun);
                 return;
             }
 
             for (const svc of filtered) {
                 const presult = await this.policyService.authorize(tun, svc.id, false);
-                logger.warn(`policywatcher-> writing policy svcId: ${svc.id} tunId: ${tun.id} trackId: ${tun.trackId}`);
+                logger.warn(`policy watcher writing policy svcId: ${svc.id} tunId: ${tun.id} trackId: ${tun.trackId}`);
                 await this.lmdbWrite(tun, presult, svc);
             }
 
@@ -133,7 +134,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             this.isStable();
             if (!this.configChangedTimes.length) return;
             if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
-            logger.info(`policywatcher-> config changed detected`);
+            logger.info(`policy watcher config changed detected`);
             let removeLength = this.configChangedTimes.length;
             let removeKeys = new Map();
             for (const iterator of this.tunnels) {
@@ -144,7 +145,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             }
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
-                logger.info(`policywatcher-> network not found`);
+                logger.info(`policy watcher network not found`);
                 await this.lmdbService.batch(async () => {
                     for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
@@ -211,7 +212,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         return range;
     }
     async lmdbClearTunnel(tun: Tunnel) {
-        logger.info(`policywatcher-> clearing policy trackId: ${tun.trackId}`)
+        logger.info(`policy watcher clearing policy trackId: ${tun.trackId}`)
         const range = await this.lmdbGetTunnel(tun);
         if (range.asArray.length)
             await this.lmdbService.batch(async () => {

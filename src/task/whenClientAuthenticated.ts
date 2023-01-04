@@ -23,7 +23,7 @@ export class WhenClientAuthenticated extends GatewayBasedTask {
     async onMessage(tunnel: Tunnel) {
 
         try {
-            logger.info(`configure tunnel on host: ${this.gatewayId}`)
+            logger.info(`whenClientAuthenticated configure tunnel on host: ${this.gatewayId}`)
             await this.readGatewayId();
             if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun && tunnel.assignedClientIp && tunnel.serviceNetwork && tunnel.trackId) {
