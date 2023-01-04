@@ -19,6 +19,7 @@ import { PolicyWatcherTask } from "./task/policyWatcherTask";
 import fs from 'fs';
 import { RedisConfigWatchCachedService } from "./service/redisConfigWatchCachedService";
 
+
 function createRedis(opt: RedisOptions) {
 
     return new RedisService(opt.host, opt.password);
@@ -27,11 +28,14 @@ function createRedis(opt: RedisOptions) {
 async function main() {
 
 
+
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
     const encryptKey = process.env.ENCRYPT_KEY || Util.randomNumberString(32);
 
     const redisOptions: RedisOptions = { host: redisHost, password: redisPassword };
+
+
     const redis = createRedis(redisOptions);
 
     const systemLog = new SystemLogService(redis, createRedis(redisOptions), encryptKey, 'job.admin');
@@ -43,10 +47,12 @@ async function main() {
     const dockerService = new DockerService();
 
 
+
     const dbFolder = process.env.DB_FOLDER || '/var/lib/ferrumgate';
     await fs.mkdirSync(dbFolder, { recursive: true });
     const policyWatcher = new PolicyWatcherTask(dbFolder, policyService, redisConfig, bcastService);
     await policyWatcher.start();
+
 
 
     // i am alive
