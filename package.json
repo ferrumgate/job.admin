@@ -4,7 +4,7 @@
   "description": "manages machine network",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_ENV=development DEBUG2=nock.* node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/redisConfigWatchCachedService.spec.ts",
+    "test": "NODE_ENV=development DEBUG2=nock.* node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/**.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc ",
     "start": "tsc && NODE_ENV=development  node ./build/src/main.js",

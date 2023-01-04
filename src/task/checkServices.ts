@@ -10,7 +10,7 @@ import { RedisConfigWatchService } from "rest.portal";
 import { ConfigWatch } from "rest.portal/service/redisConfigService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * we need to check device tun devices againt to redis
+ *@summary we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
  * delete tun device
  */

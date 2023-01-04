@@ -127,9 +127,22 @@ describe('lmdbService', () => {
 
             start: '/test/id/', end: arr
         });
+
         for (const iterator of item2) {
             console.log(iterator.key);
         }
+
+        let item3 = await lmdb.range({
+
+        });
+        const arr3 = item3.asArray;
+
+        const lmdb2 = await LmdbService.open('ferrum', tmpfolder);
+
+        let item4 = await lmdb2.range({
+
+        });
+        const arr4 = item4.asArray;
         await lmdb.close();
 
 

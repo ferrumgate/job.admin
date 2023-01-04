@@ -9,7 +9,7 @@ import { BroadcastService } from "../service/broadcastService";
 
 
 /**
- * when a client disconnects, publish its tunnel key
+ * @summary when a client disconnects, publish its tunnel key
  * follow and delete all related data
  */
 export class WhenTunnelClosed extends GatewayBasedTask {

@@ -4,7 +4,9 @@ import { NetworkService } from "./networkService";
 export interface Pod {
     id: string, image: string, name: string; details?: any;
 }
-
+/**
+ * @summary docker management
+ */
 export class DockerService {
 
     //security check, input from outer

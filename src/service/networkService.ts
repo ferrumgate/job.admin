@@ -1,7 +1,9 @@
 import { logger, Util } from "rest.portal";
 
 
-
+/**
+ * @summary 
+ */
 export class NetworkService {
 
     static async ipAddr(int: string, ip: string) {

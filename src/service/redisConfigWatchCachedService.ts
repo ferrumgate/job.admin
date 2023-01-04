@@ -14,7 +14,7 @@ class NodeCacheForThis extends NodeCache {
 }
 
 /**
- * cached version for policy service
+ * @summary cached version for policy service
  * we need super fast searching in policy service
  */
 export class RedisConfigWatchCachedService extends RedisConfigWatchService {

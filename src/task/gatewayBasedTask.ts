@@ -2,7 +2,7 @@ import { BaseTask } from "./baseTask";
 import fspromise from 'fs/promises';
 
 /**
- * a base class that reads gatewayId from configfile
+ * @summary a base class that supports gatewayId
  */
 export abstract class GatewayBasedTask extends BaseTask {
 

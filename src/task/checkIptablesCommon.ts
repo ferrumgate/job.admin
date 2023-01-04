@@ -9,7 +9,7 @@ import { Gateway } from "rest.portal";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * check common rules in iptables
+ * @summary check common rules in iptables
  */
 
 export class CheckIptablesCommon extends GatewayBasedTask {

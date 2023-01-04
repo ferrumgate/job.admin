@@ -15,7 +15,9 @@ import { PolicyService } from "rest.portal";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 
-
+/**
+ * @summary follow all system status, tunnels, configs and emit related events to system
+ */
 export class SystemWatcherTask extends GatewayBasedTask {
 
     protected tunnels: NodeCache;
@@ -40,7 +42,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
 
         this.redisConfigService.watch.on('log', async (data: WatchItem<any>) => {
             //analyze all logs
-            if (data.val.path.startsWith('/system/tunnel')) {
+            if (data.val.path.startsWith('/system/tunnels')) {
                 this.waitList.push(data.val);
             }
             this.bcastService.emit('log', data.val);
@@ -67,6 +69,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
         if (this.startTimer)
             clearIntervalAsync(this.startTimer);
         this.startTimer = null;
+        await this.redisConfigService.stop();
     }
 
     async loadAllTunnels() {
@@ -102,7 +105,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
             if (!this.allTunnelsLoaded) return;
             while (this.waitList.length) {
                 const ev = this.waitList[0];
-                if (ev.path == '/system/tunnel/confirm') {
+                if (ev.path == '/system/tunnels/confirm') {
                     logger.info(`tunnel confirm received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id) {
@@ -112,7 +115,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
                         }
                     }
                 }
-                if (ev.path == '/system/tunnel/alive') {
+                if (ev.path == '/system/tunnels/alive') {
                     logger.info(`tunnel alive received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id && data.gatewayId == this.gatewayId) {

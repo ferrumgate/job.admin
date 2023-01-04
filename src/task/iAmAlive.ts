@@ -6,12 +6,11 @@ import os from 'os';
 import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  * 
- * every 5 second, host sends I am alive
- * 
+ * @summary every 5 second, host sends I am alive, with os related data
  */
-
 export class IAmAlive extends GatewayBasedTask {
 
     protected timer: any | null = null;

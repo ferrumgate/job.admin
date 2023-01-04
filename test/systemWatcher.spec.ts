@@ -130,7 +130,7 @@ describe('systemWatcher', () => {
         const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.start();
-        await systemlog.write({ path: '/system/tunnel/confirm', type: 'put', val: { id: '1231', gatewayId: '12345' } })
+        await systemlog.write({ path: '/system/tunnels/confirm', type: 'put', val: { id: '1231', gatewayId: '12345' } })
         await Util.sleep(5000);
         expect(isTunnelConfigCalled).to.be.true;
 

@@ -5,7 +5,7 @@ import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * after a tun device created, we added a new iptables rule
+ * @summary after a tun device created, we added a new iptables rule
  * for security remove this rule if device not exits
  */
 

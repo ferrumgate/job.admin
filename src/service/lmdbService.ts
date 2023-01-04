@@ -1,5 +1,8 @@
 import lmdb from 'lmdb';
 
+/**
+ * @summary lmdb database
+ */
 export class LmdbService {
     /**
      *

@@ -5,7 +5,7 @@ import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * we need to check device tun devices againt to redis
+ * @summary we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
  * delete tun device
  */

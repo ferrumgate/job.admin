@@ -1,18 +1,23 @@
 import { Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchService, Service, Tunnel } from "rest.portal";
 import { PolicyAuthzResult } from "rest.portal/service/policyService";
 import { ConfigWatch } from "rest.portal/service/redisConfigService";
-import { setIntervalAsync } from "set-interval-async";
+import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { BroadcastService } from "../service/broadcastService";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 
+/**
+ * @summary follows system logs, all tunnels, all config changes
+ * and recalculates policy 
+ * @see SystemWatcherTask, all events are redirect from there
+ */
 export class PolicyWatcherTask extends GatewayBasedTask {
 
-    lmdbService!: LmdbService;
-    unstableSystem = false;
-    tunnels = new Map();
-    configChangedTimes: number[] = [];
-    configChangedTimer: any;
+    protected lmdbService!: LmdbService;
+    protected unstableSystem = false;
+    protected tunnels = new Map();
+    protected configChangedTimes: number[] = [];
+    protected configChangedTimer: any;
     constructor(private dbFolder: string, private policyService: PolicyService,
         private redisConfigService: RedisConfigWatchService,
         private bcastEvents: BroadcastService) {
@@ -33,11 +38,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         })
         this.configChangedTimer = await setIntervalAsync(async () => {
             await this.executeConfigChanged();
-        }, 2000);
+        }, 1000);
     }
 
     async stop() {
-
+        if (this.configChangedTimer)
+            clearIntervalAsync(this.configChangedTimer);
+        this.configChangedTimer = null;
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
@@ -58,13 +65,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
     async getNetworkAndGateway() {
         const gateway = await this.redisConfigService.getGateway(this.gatewayId);
-        if (!gateway?.isEnabled) {
-            logger.warn(`policywatcher-> gateway not found or not enabled`)
+        if (!gateway) {
+            logger.warn(`policywatcher-> gateway not found`)
             return {};
         }
-        const network = await this.redisConfigService.getNetworkByGateway(gateway.id);
-        if (!network?.isEnabled) {
-            logger.warn(`policywatcher-> network not found or not enabled`)
+        const network = await this.redisConfigService.getNetwork(gateway.networkId || '');
+        if (!network) {
+            logger.warn(`policywatcher-> network not found`)
             return { gateway: gateway }
         }
         return { gateway: gateway, network: network }
@@ -76,19 +83,22 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             this.isStable();
 
             const { gateway, network } = await this.getNetworkAndGateway();
-            if (!network || !gateway) {
+            if (!network) {
+                logger.warn(`policywatcher-> tunnel trackId: ${tun.trackId} network not found`);
+                await this.lmdbClearTunnel(tun);
                 return;
             }
-            const services = await this.redisConfigService.getServicesByNetworkId(network.id);
-            if (!services.length) {
+            const services = await this.redisConfigService.getServicesAll();
+            const filtered = services.filter(x => x.networkId == network.id);
+            if (!filtered.length) {
                 logger.warn(`policywatcher-> tunnel trackId: ${tun.trackId} services not found`);
                 await this.lmdbClearTunnel(tun);
                 return;
             }
 
-            for (const svc of services) {
+            for (const svc of filtered) {
                 const presult = await this.policyService.authorize(tun, svc.id, false);
-                logger.warn(`policywatcher-> writing policy svcId: ${svc.id}`);
+                logger.warn(`policywatcher-> writing policy svcId: ${svc.id} tunId: ${tun.id} trackId: ${tun.trackId}`);
                 await this.lmdbWrite(tun, presult, svc);
             }
 
@@ -122,21 +132,21 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         try {
             this.isStable();
             if (!this.configChangedTimes.length) return;
-            if (!(new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
+            if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
             logger.info(`policywatcher-> config changed detected`);
             let removeLength = this.configChangedTimes.length;
             let removeKeys = new Map();
             for (const iterator of this.tunnels) {
-                const range = await this.lmdbService.range({ start: this.createKey(iterator[1]) });
+                const range = await this.lmdbGetTunnel(iterator[1]);
                 for (const it of range) {
                     removeKeys.set(it.key, 1);
                 }
             }
             const { gateway, network } = await this.getNetworkAndGateway();
-            if (!gateway || !network) {
-                logger.info(`policywatcher-> gateway or network not found`);
+            if (!network) {
+                logger.info(`policywatcher-> network not found`);
                 await this.lmdbService.batch(async () => {
-                    for (const key of removeKeys) {
+                    for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
                     }
                 })
@@ -190,17 +200,25 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     }
     async lmdbWrite(tun: Tunnel, result: PolicyAuthzResult, svc: Service) {
         // /authorize/track/id/2/service/id/1  /pResult/errorNumber/ruleNumber/tunId/userId/networkId
-
         await this.lmdbService.put(this.createKey(tun, svc), this.createValue(tun, result, svc))
+    }
+    async lmdbGetTunnel(tun: Tunnel) {
+        const arr = new Uint8Array(255);
+        arr.fill(255, 0, 254);
+        const key = this.createKey(tun);
+        Buffer.from(key).copy(arr, 0, 0, key.length);
+        const range = await this.lmdbService.range({ start: key, end: arr });
+        return range;
     }
     async lmdbClearTunnel(tun: Tunnel) {
         logger.info(`policywatcher-> clearing policy trackId: ${tun.trackId}`)
-        const range = await this.lmdbService.range({ start: this.createKey(tun) });
-        await this.lmdbService.batch(async () => {
-            for (const r of range) {
-                await this.lmdbService.remove(r.key);
-            }
-        })
+        const range = await this.lmdbGetTunnel(tun);
+        if (range.asArray.length)
+            await this.lmdbService.batch(async () => {
+                for (const r of range) {
+                    await this.lmdbService.remove(r.key);
+                }
+            })
     }
 
 

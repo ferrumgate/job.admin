@@ -8,7 +8,7 @@ import { BroadcastService } from "../service/broadcastService";
 
 
 /**
- * when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
+ * @summary when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
  * and this task executes interface up, and routing
  */
 export class WhenClientAuthenticated extends GatewayBasedTask {
