@@ -37,11 +37,14 @@ export class SystemWatcherTask extends GatewayBasedTask {
             stdTTL: 7 * 60 * 1000, useClones: false, checkperiod: 10 * 60 * 1000
         })
         this.tunnels.on('expired', async (key: string, value: Tunnel) => {
+
             this.bcastService.emit('tunnelExpired', value);
+            logger.info(`system watcher tunnel expired id:${value.id} trackId:${value.trackId}`);
         })
 
         this.redisConfigService.watch.on('log', async (data: WatchItem<any>) => {
             //analyze all logs
+
             if (data.val.path.startsWith('/system/tunnels')) {
                 this.waitList.push(data.val);
             }
@@ -49,7 +52,9 @@ export class SystemWatcherTask extends GatewayBasedTask {
 
         })
         this.redisConfigService.watch.on('configChanged', async (data: WatchItem<any>) => {
+
             this.bcastService.emit('configChanged', data.val);
+            logger.info(`system watcher config changed ${data.val?.path}`);
         })
 
 
@@ -80,7 +85,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
             await this.redisConfigService.isReady();
 
             const allTunnels = await this.tunnelService.getAllValidTunnels(() => !this.isStoping);
-            logger.info(`getted all tunnels count: ${allTunnels.length}`);
+            logger.info(`system watcher getted all tunnels count: ${allTunnels.length}`);
             allTunnels.forEach((x: Tunnel) => {
                 if (x.id && x.gatewayId == this.gatewayId)
                     this.tunnels.set(x.id, x);
@@ -88,7 +93,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
             clearIntervalAsync(this.startTimer);
             this.startTimer = null;
             this.allTunnelsLoaded = true;
-            logger.info(`all tunnels getted count:${allTunnels.length}`);
+            logger.info(`system watcher all tunnels getted count:${allTunnels.length}`);
             allTunnels.forEach((x: Tunnel) => {
                 if (x.gatewayId == this.gatewayId)
                     this.bcastService.emit('tunnelConfirm', x);
@@ -105,13 +110,16 @@ export class SystemWatcherTask extends GatewayBasedTask {
             if (!this.allTunnelsLoaded) return;
             while (this.waitList.length) {
                 const ev = this.waitList[0];
+                logger.info(`log received ${JSON.stringify(ev.val)}`);
                 if (ev.path == '/system/tunnels/confirm') {
                     logger.info(`tunnel confirm received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id) {
                         this.tunnels.set(data.id, data, 5 * 60 * 1000);
                         if (data.gatewayId == this.gatewayId) {
+
                             this.bcastService.emit('tunnelConfigure', data);
+                            logger.info(`system watcher tunnel configure id:${data.id} trackId:${data.trackId}`)
                         }
                     }
                 }
@@ -119,8 +127,11 @@ export class SystemWatcherTask extends GatewayBasedTask {
                     logger.info(`tunnel alive received ${JSON.stringify(ev.val)}`);
                     const data = ev.val as Tunnel;
                     if (data?.id && data.gatewayId == this.gatewayId) {
-                        if (this.tunnels.has(data.id))
+                        if (this.tunnels.has(data.id)) {
+
                             this.tunnels.ttl(data.id, 5 * 60 * 1000);
+                            logger.info(`system watcher tunnel alive id:${data.id} trackId:${data.trackId}`)
+                        }
                     }
                 }
                 this.waitList.shift();
