@@ -146,6 +146,21 @@ describe('lmdbService', () => {
         await lmdb.close();
 
 
+    }).timeout(10000);
+
+
+    it('get/put integration', async () => {
+
+        const lmdb = await LmdbService.open('ferrumgate', __dirname + '/data', 'string');
+
+        //await lmdb.put('/test/1', 'hamza');
+
+        let item2 = await lmdb.get('/test/1');
+        expect(item2).to.equal('hamza');
+
+        await lmdb.close();
+
+
     }).timeout(10000)
 
 
