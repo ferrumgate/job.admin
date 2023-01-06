@@ -191,13 +191,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
     createKey(tun: Tunnel, svc?: Service) {
         if (tun && svc)
-            return `/authorize/track/id/${tun.id}/service/id/${svc.id}`
+            return `/authorize/track/id/${tun.trackId}/service/id/${svc.id}`
         else
-            return `/authorize/track/id/${tun.id}/service/id/`
+            return `/authorize/track/id/${tun.trackId}/service/id/`
     }
     createValue(tun: Tunnel, result: PolicyAuthzResult, svc: Service) {
         let isDrop = result.error ? 1 : 0;
-        return `/${isDrop}/${result.error}/${result.rule?.id}/${tun.id}/${tun.userId}`
+        return `${isDrop},${result.error},${result.rule?.id || ''},${tun.id || ''},${tun.userId || ''}`
     }
     async lmdbWrite(tun: Tunnel, result: PolicyAuthzResult, svc: Service) {
         // /authorize/track/id/2/service/id/1  /pResult/errorNumber/ruleNumber/tunId/userId/networkId
