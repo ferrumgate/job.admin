@@ -1,5 +1,5 @@
 
-import { TunnelService } from "rest.portal";
+import { RedisConfigWatchCachedService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
@@ -17,7 +17,7 @@ import { WhenClientAuthenticated } from "./task/whenClientAuthenticated";
 import { WhenTunnelClosed } from "./task/whenTunnelClosed";
 import { PolicyWatcherTask } from "./task/policyWatcherTask";
 import fs from 'fs';
-import { RedisConfigWatchCachedService } from "./service/redisConfigWatchCachedService";
+
 
 
 function createRedis(opt: RedisOptions) {

@@ -58,7 +58,7 @@ describe('dockerService', () => {
         let svc = createSampleData();
         const docker = new DockerService();
         const result = docker.getEnv(svc);
-        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306');
+        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
 

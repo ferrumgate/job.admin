@@ -27,6 +27,7 @@ export class DockerService {
 
             let env = `
 -e LOG_LEVEL=${process.env.LOG_LEVEL || 'info'}
+-e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'localhost:9292'}
 -e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'} 
 ${redis_pass}
 -e RAW_DESTINATION_HOST=${svc.host}
@@ -43,7 +44,8 @@ ${tcp_listen} ${udp_listen}
         let env = `
 -e GATEWAY_ID=${gatewayId}
 -e SERVICE_ID=${svc.id}
--e INSTANCE_ID=${Util.randomNumberString(16)}`
+-e INSTANCE_ID=${Util.randomNumberString(16)}
+-e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'log:9292'}`
         return env.replace(/\n/g, ' ');
     }
     async execute(cmd: string) {
@@ -61,7 +63,7 @@ ${tcp_listen} ${udp_listen}
     }
     async run(svc: Service, gatewayId: string, network: string) {
         logger.info(`starting ferrum service ${svc.name}`)
-        let volume = `--volume ${process.env.VOLUME_SHARED || 'ferrumgate_shared'}:/var/run/ferrumgate --volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:/var/lib/ferrumgate`
+        let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:/var/lib/ferrumgate`
         let net = network ? `--net=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
