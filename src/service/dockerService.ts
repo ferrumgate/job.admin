@@ -65,10 +65,11 @@ ${tcp_listen} ${udp_listen}
         logger.info(`starting ferrum service ${svc.name}`)
         let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:/var/lib/ferrumgate --volume /dev/urandom:/dev/urandom`
         let net = network ? `--net=${network}` : '';
+        let pid = network ? `--pid=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
         let command = `
-docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${volume} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
+docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${pid} ${volume} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
 ${this.getLabels(svc)} 
 -d ${this.getEnv(svc)}
 ${this.getGatewayServiceInstanceId(gatewayId, svc)}
