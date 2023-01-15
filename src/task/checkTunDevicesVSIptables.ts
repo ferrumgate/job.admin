@@ -48,7 +48,7 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
                 }
 
                 const rulesPostrouting = await NetworkService.getManglePostroutingTableDeviceRules();
-                for (const rule of rulesOutput) {
+                for (const rule of rulesPostrouting) {
                     const device = devices.find(x => x == rule.name);
                     if (!device) {// no device is found for this rule. try to delete it
                         try {
