@@ -1,6 +1,6 @@
 
 /**
- * base task interface
+ * @summary base task interface
  */
 export abstract class BaseTask {
     //does not throw exception

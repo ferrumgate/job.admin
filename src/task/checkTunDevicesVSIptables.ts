@@ -1,25 +1,22 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
+
+import { logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * after a tun device created, we added a new iptables rule
+ * @summary after a tun device created, we added a new iptables rule
  * for security remove this rule if device not exits
  */
 
 export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
     protected timer: any | null = null;
-    protected redis: RedisService | null = null;
     protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
-        super(configService);
+    constructor() {
+        super();
     }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
+
 
     public async check() {
 
@@ -38,6 +35,17 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
                         } catch (ignore) { }
                     }
                 }
+                const rulesPrerouting = await NetworkService.getManglePreroutingTableDeviceRules();
+                for (const rule of rulesPrerouting) {
+                    const device = devices.find(x => x == rule.name);
+                    if (!device) {// no device is found for this rule. try to delete it
+                        try {
+                            logger.info(`no device found for rule ${rule.rule}`)
+                            await NetworkService.deleteMangleTableIptables(rule.rule);
+                        } catch (ignore) { }
+                    }
+                }
+
 
                 const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
                 for (const rule of rulesOutput) {
@@ -51,7 +59,7 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
                 }
 
                 const rulesPostrouting = await NetworkService.getManglePostroutingTableDeviceRules();
-                for (const rule of rulesOutput) {
+                for (const rule of rulesPostrouting) {
                     const device = devices.find(x => x == rule.name);
                     if (!device) {// no device is found for this rule. try to delete it
                         try {
@@ -68,7 +76,7 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
+
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
@@ -79,13 +87,8 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
             if (this.timer)
                 clearIntervalAsync(this.timer);
             this.timer = null;
-            await this.redis?.disconnect();
-
         } catch (err) {
             logger.error(err);
-        } finally {
-            this.redis = null;
-
         }
     }
 

@@ -2,22 +2,13 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
 
-import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
-import { basename } from 'path';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
 import fs from 'fs';
-import { Tunnel } from '../src/model/tunnel';
-import { WhenTunnelClosed } from '../src/task/whenTunnelClosed';
-import { IAmAlive } from '../src/task/iAmAlive';
-import { RedisOptions, RedisService } from "../src/service/redisService";
-import { ConfigService } from '../src/service/configService';
+import { Service, Util } from 'rest.portal';
 import { DockerService } from '../src/service/dockerService';
-import { Service } from '../src/model/service';
+
 
 
 chai.use(chaiHttp);
@@ -45,7 +36,7 @@ describe('dockerService', () => {
         const result = docker.normalizeName('ad0-?As@@df!oiw02');
         expect(result).to.equal('ad0Asdfoiw02');
 
-    }).timeout(1000)
+    }).timeout(30000)
     function createSampleData() {
         let service: Service = {
             id: Util.randomNumberString(),
@@ -57,6 +48,7 @@ describe('dockerService', () => {
             tcp: 3306, assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
+            count: 1
 
         }
         return service;
@@ -66,7 +58,7 @@ describe('dockerService', () => {
         let svc = createSampleData();
         const docker = new DockerService();
         const result = docker.getEnv(svc);
-        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306');
+        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
 
@@ -99,7 +91,7 @@ describe('dockerService', () => {
         const docker = new Mock33();
         const result = await docker.run(svc, '231a0932', 'host');
         expect(docker.ip).to.equal('an ip');
-        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --name  ferrumgate-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
+        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  ferrumgate-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
 
 
     }).timeout(10000)

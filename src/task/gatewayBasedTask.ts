@@ -1,21 +1,21 @@
 import { BaseTask } from "./baseTask";
 import fspromise from 'fs/promises';
-import { ConfigService } from "../service/configService";
 
 /**
- * a base class that reads gatewayId from configfile
+ * @summary a base class that supports gatewayId
  */
 export abstract class GatewayBasedTask extends BaseTask {
-    protected gatewayId = '';
 
+    protected gatewayId = process.env.GATEWAY_ID || '';
     /**
      *
      */
-    constructor(protected configService: ConfigService) {
+    constructor() {
         super();
     }
 
     protected async readGatewayId() {
-        this.gatewayId = await this.configService.getGatewayId();
+        if (!this.gatewayId)
+            throw new Error('gateway id is empty');
     }
 }

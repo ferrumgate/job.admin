@@ -1,13 +1,12 @@
-import { Util } from "../util";
-import { Service } from "../model/service";
+import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
-import { logger } from "../common";
-import { util } from "chai";
 
 export interface Pod {
     id: string, image: string, name: string; details?: any;
 }
-
+/**
+ * @summary docker management
+ */
 export class DockerService {
 
     //security check, input from outer
@@ -28,6 +27,7 @@ export class DockerService {
 
             let env = `
 -e LOG_LEVEL=${process.env.LOG_LEVEL || 'info'}
+-e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'localhost:9292'}
 -e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'} 
 ${redis_pass}
 -e RAW_DESTINATION_HOST=${svc.host}
@@ -44,11 +44,15 @@ ${tcp_listen} ${udp_listen}
         let env = `
 -e GATEWAY_ID=${gatewayId}
 -e SERVICE_ID=${svc.id}
--e INSTANCE_ID=${Util.randomNumberString(16)}`
+-e INSTANCE_ID=${Util.randomNumberString(16)}
+-e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'log:9292'}`
         return env.replace(/\n/g, ' ');
     }
     async execute(cmd: string) {
         return await Util.exec(cmd)
+    }
+    async executeWithoutError(cmd: string) {
+        return await Util.exec(cmd, false)
     }
     async ipAddr(svc: Service) {
         if (svc.assignedIp != '127.0.0.1')
@@ -59,11 +63,13 @@ ${tcp_listen} ${udp_listen}
     }
     async run(svc: Service, gatewayId: string, network: string) {
         logger.info(`starting ferrum service ${svc.name}`)
+        let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:/var/lib/ferrumgate --volume /dev/urandom:/dev/urandom`
         let net = network ? `--net=${network}` : '';
+        let pid = network ? `--pid=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
         let command = `
-docker run --cap-add=NET_ADMIN --rm --restart=no ${net} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
+docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${pid} ${volume} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
 ${this.getLabels(svc)} 
 -d ${this.getEnv(svc)}
 ${this.getGatewayServiceInstanceId(gatewayId, svc)}
@@ -76,6 +82,7 @@ ${image}`
     }
     async inspect(podId: string | string[]) {
         const inspect = await this.execute(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null`) as string;
+        //const inspect = await this.executeWithoutError(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId}`) as string;
 
         try {
             return JSON.parse(inspect);

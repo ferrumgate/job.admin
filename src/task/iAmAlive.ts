@@ -1,37 +1,36 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
+
+
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
 import os from 'os';
+import { logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  * 
- * every 5 second, host sends I am alive
- * 
+ * @summary every 5 second, host sends I am alive, with os related data
  */
-
 export class IAmAlive extends GatewayBasedTask {
 
     protected timer: any | null = null;
-    protected redis: RedisService | null = null;
+
     protected lastCheckTime2 = new Date(1).getTime();
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService) {
-        super(configService);
+    constructor(protected redis: RedisService) {
+        super();
     }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
+
 
     public async check() {
 
         try {
-
-            logger.info(`write I am alive to redis global`);
+            if (new Date().getTime() % 5 == 0)//write some times
+                logger.info(`write I am alive to redis`);
             await this.readGatewayId();
             //set to the global
-            let hostkey = `/gateway/alive/id/${this.gatewayId}`;
-            await this.redis?.hset(hostkey, {
+            let hostkey = `/alive/gateway/id/${this.gatewayId}`;
+            const trx = await this.redis.multi();
+            await trx.hset(hostkey, {
                 id: this.gatewayId,
                 arch: os.arch(),
                 cpusCount: os.cpus().length,
@@ -47,7 +46,8 @@ export class IAmAlive extends GatewayBasedTask {
                 interfaces: JSON.stringify(os.networkInterfaces()),
                 lastSeen: new Date().getTime()
             })
-            await this.redis?.expire(hostkey, 5 * 60 * 1000);
+            await trx.expire(hostkey, 5 * 60 * 1000);
+            await trx.exec();
 
         } catch (err) {
             logger.error(err);
@@ -56,7 +56,7 @@ export class IAmAlive extends GatewayBasedTask {
 
 
     public override async start(): Promise<void> {
-        this.redis = this.createRedisClient();
+
         await this.check();
         this.timer = setIntervalAsync(async () => {
             await this.check();
@@ -67,12 +67,11 @@ export class IAmAlive extends GatewayBasedTask {
             if (this.timer)
                 clearIntervalAsync(this.timer);
             this.timer = null;
-            await this.redis?.disconnect();
 
         } catch (err) {
             logger.error(err);
         } finally {
-            this.redis = null;
+
 
         }
     }

@@ -2,18 +2,13 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-import { RedisOptions, RedisService } from '../src/service/redisService';
-import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
-import { basename } from 'path';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
 import fs from 'fs';
-import { Tunnel } from '../src/model/tunnel';
 import { WhenTunnelClosed } from '../src/task/whenTunnelClosed';
-import { ConfigService } from '../src/service/configService';
+import { RedisService, Tunnel, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
+import { BroadcastService } from '../src/service/broadcastService';
 
 
 chai.use(chaiHttp);
@@ -59,35 +54,21 @@ describe('whenTunnelClosed', () => {
 
         class Mock extends WhenTunnelClosed {
 
-            constructor(redis: RedisOptions, config: ConfigService) {
-                super(redis, config);
-
-            }
-
             protected override async readGatewayId(): Promise<void> {
                 this.gatewayId = 'agatewayid';
             }
             public setGatewayId(id: string) {
                 this.gatewayId = id;
-
             }
-            public connectRedis() {
-                this.redis = super.createRedisClient();
-            }
-
         }
 
-        const configService = new ConfigService();
-        const task = new Mock({ host: 'localhost:6379' }, configService);
-        task.connectRedis();
+        const bcast = new BroadcastService();
+        const task = new Mock(bcast);
+        await task.start();
         task.setGatewayId(tunnel.gatewayId || '');
-        await task.onMessage(`/tunnel/closed/${tunnel.gatewayId}`, key);
+        bcast.emit('tunnelExpired', tunnel);
         await Util.sleep(3000);
         expect(deleteExecuted).to.be.true;
-        const redisItem = await redis.hgetAll(`/tunnel/id/${key}`);
-        expect(redisItem.gatewayId).not.exist;
-        const isExits = await redis.sismember(`/tunnel/configure/${tunnel.gatewayId}`, tunnel.id || '');
-        expect(Boolean(isExits)).to.be.false;
         Util.exec = tmpFunction;//set back it again
 
 

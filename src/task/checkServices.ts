@@ -1,14 +1,16 @@
-import { RedisOptions, RedisService } from "../service/redisService";
-import { logger } from "../common";
+
+
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService } from "../service/configService";
-import { Service } from "../model/service";
-import { ConfigEvent } from "../model/configEvent";
 import { DockerService, Pod } from "../service/dockerService";
+import { ConfigEvent, logger, RedisService, Service } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
+import { BroadcastService } from "../service/broadcastService";
+import { RedisConfigWatchService } from "rest.portal";
+import { ConfigWatch } from "rest.portal/service/redisConfigService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
- * we need to check device tun devices againt to redis
+ *@summary we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
  * delete tun device
  */
@@ -22,16 +24,15 @@ export class CheckServices extends GatewayBasedTask {
     protected timerCheck: any | null = null;
 
 
-    constructor(protected redisOptions: RedisOptions, configService: ConfigService,
+    constructor(private configService: RedisConfigWatchService,
+        protected bcastService: BroadcastService,
         protected dockerService: DockerService) {
-        super(configService);
-        this.configService.eventEmitter.on('configChanged', (evt: ConfigEvent) => {
+        super();
+        this.bcastService.on('configChanged', (evt: ConfigWatch<any>) => {
             this.onConfigChanged(evt);
         })
     }
-    protected createRedisClient() {
-        return new RedisService(this.redisOptions.host, this.redisOptions.password);
-    }
+
     public async closeAllServices() {
         const services = await this.dockerService.getAllRunning();
         for (const svc of services) {
@@ -51,7 +52,7 @@ export class CheckServices extends GatewayBasedTask {
             logger.info(`checking all services`);
             await this.readGatewayId();
 
-            const currentGateway = await this.configService.getGatewayById();
+            const currentGateway = await this.configService.getGateway(this.gatewayId);
             if (!currentGateway) {
                 logger.error(`current gateway not found ${this.gatewayId}`);
                 await this.closeAllServices();
@@ -62,7 +63,7 @@ export class CheckServices extends GatewayBasedTask {
                 await this.closeAllServices();
                 return;
             }
-            const network = await this.configService.getNetworkByGatewayId();
+            const network = await this.configService.getNetworkByGateway(this.gatewayId);
             if (!network) {
                 logger.error(`current network not found for gateway ${this.gatewayId}`);
                 await this.closeAllServices();
@@ -79,7 +80,7 @@ export class CheckServices extends GatewayBasedTask {
                 return;
             }
 
-            const services = await this.configService.getServicesByGatewayId();
+            const services = await this.configService.getServicesByNetworkId(network.id);
             const running = await this.dockerService.getAllRunning();
             await this.compare(running, services);
 
@@ -138,10 +139,10 @@ export class CheckServices extends GatewayBasedTask {
 
     }
 
-    public async onConfigChanged(event: ConfigEvent) {
+    public async onConfigChanged(event: ConfigWatch<any>) {
         try {
 
-            if (event.path.startsWith('/services') || event.path.startsWith('/gateways') || event.path.startsWith('/networks')) {
+            if (event.path.startsWith('/config/services') || event.path.startsWith('/config/gateways') || event.path.startsWith('/config/networks')) {
                 logger.info(`check immediately services`);
                 await this.checkServices();
             }
@@ -154,6 +155,11 @@ export class CheckServices extends GatewayBasedTask {
 
     public override async start(): Promise<void> {
         try {
+            await this.closeAllServices();
+        } catch (err) {
+            logger.error(err);
+        }
+        try {
 
             await this.checkServices();
             this.timerCheck = setIntervalAsync(async () => {
@@ -161,10 +167,6 @@ export class CheckServices extends GatewayBasedTask {
             }, 30 * 1000);
         } catch (err) {
             logger.error(err);
-            setTimeout(async () => {
-                await this.stop();
-                await this.start();
-            }, 5000);//try again 5 seconds
         }
     }
     public override async stop(): Promise<void> {
@@ -176,8 +178,6 @@ export class CheckServices extends GatewayBasedTask {
 
         } catch (err) {
             logger.error(err);
-        } finally {
-
         }
     }
 

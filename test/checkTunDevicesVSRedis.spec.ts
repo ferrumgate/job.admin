@@ -2,22 +2,12 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { Util } from '../src/util';
-import { RedisOptions, RedisService } from '../src/service/redisService';
-import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
-import { basename } from 'path';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
-import fs from 'fs';
-import { CheckNotAuthenticatedClients } from '../src/task/checkNotAuthenticatedClient';
-import { Tunnel } from '../src/model/tunnel';
-import { ConfigService } from '../src/service/configService';
-import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
-import { NetworkService } from '../src/service/networkService';
-import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
+
 import { CheckTunDevicesVSRedis } from '../src/task/checkTunDevicesVSRedis';
+import { RedisService, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
 
 
 
@@ -36,13 +26,6 @@ describe('checkTunDevicesVSRedis', () => {
 
         class Mock extends CheckTunDevicesVSRedis {
 
-            /**
-             *
-             */
-            constructor(redisOption: RedisOptions, configService: ConfigService) {
-                super(redisOption, configService);
-
-            }
             protected override async readGatewayId(): Promise<void> {
                 this.gatewayId = 'myhost123';
             }
@@ -64,8 +47,8 @@ describe('checkTunDevicesVSRedis', () => {
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
         await simpleRedis.set(`/gateway/myhost123/tun/ferrum1`, 1);
 
-        const configService = new ConfigService();
-        const checker = new Mock({ host: 'localhost:6379' }, configService);
+
+        const checker = new Mock(simpleRedis);
         await checker.check();
         Util.exec = functionBackup;
         expect(deleteExecuted).to.be.true;

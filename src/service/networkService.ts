@@ -1,7 +1,9 @@
-import { logger } from "../common";
-import { Util } from "../util";
+import { logger, Util } from "rest.portal";
 
 
+/**
+ * @summary 
+ */
 export class NetworkService {
 
     static async ipAddr(int: string, ip: string) {
@@ -76,14 +78,17 @@ export class NetworkService {
  */
     static async addToConntrackClient(tun: string, trackId: string | number) {
         logger.info(`adding iptables client  ${trackId} dev ${tun}`);
-        //iptables -t mangle -A OUTPUT -o ferrumuRUK3GkP -j CONNMARK --set-mark 2
-        const log = await Util.exec(`iptables -t mangle -A OUTPUT -o ${tun} -j CONNMARK --set-mark ${trackId}`)
+        //iptables -t mangle -A  PREROUTING -i ferrumuehqjjSh -j MARK --set-xmark 0x7/0xffffffff
+        const log2 = await Util.exec(`iptables -t mangle -A PREROUTING -i ${tun} -j MARK --set-mark ${trackId}`)
+        if (log2)
+            logger.info(log2)
+
+
+        const log = await Util.exec(`iptables -t mangle -A PREROUTING -i ${tun} -j CONNMARK --set-mark ${trackId}`)
         if (log)
             logger.info(log)
 
-        const log2 = await Util.exec(`iptables -t mangle -A POSTROUTING -o ${tun} -j MARK --set-mark ${trackId}`)
-        if (log2)
-            logger.info(log2)
+
 
     }
 
@@ -210,6 +215,22 @@ export class NetworkService {
         logger.info(`getting iptables POSTROUTING chain`);
         //iptables -S INPUT
         let output = await Util.exec(`iptables -t mangle -S POSTROUTING`);
+        if (!output) return [];
+        let lines = (output as String).split('\n').map(x => x.trim());
+        let filtered = lines.filter(x => x.startsWith('-A')).filter(x => x.indexOf('ferrum') >= 0).filter(x => x.indexOf('ferrum+') < 0);
+        return filtered.map(x => {
+            let deviceName = x.split(' ').filter(y => y).filter(x => x.startsWith('ferrum')).find(y => y);
+            return {
+                name: deviceName, rule: x.replace('-A', '-D')
+            }
+        })
+    }
+
+
+    static async getManglePreroutingTableDeviceRules() {
+        logger.info(`getting iptables PREROUTING chain`);
+        //iptables -S INPUT
+        let output = await Util.exec(`iptables -t mangle -S PREROUTING`);
         if (!output) return [];
         let lines = (output as String).split('\n').map(x => x.trim());
         let filtered = lines.filter(x => x.startsWith('-A')).filter(x => x.indexOf('ferrum') >= 0).filter(x => x.indexOf('ferrum+') < 0);
