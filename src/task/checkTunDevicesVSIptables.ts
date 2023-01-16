@@ -35,6 +35,17 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
                         } catch (ignore) { }
                     }
                 }
+                const rulesPrerouting = await NetworkService.getManglePreroutingTableDeviceRules();
+                for (const rule of rulesPrerouting) {
+                    const device = devices.find(x => x == rule.name);
+                    if (!device) {// no device is found for this rule. try to delete it
+                        try {
+                            logger.info(`no device found for rule ${rule.rule}`)
+                            await NetworkService.deleteMangleTableIptables(rule.rule);
+                        } catch (ignore) { }
+                    }
+                }
+
 
                 const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
                 for (const rule of rulesOutput) {

@@ -38,6 +38,17 @@ export class WhenTunnelClosed extends GatewayBasedTask {
                     } catch (ignore) { }
 
                 }
+
+                const rulesPrerouting = await NetworkService.getManglePreroutingTableDeviceRules();
+                logger.info(`deleting iptables MANGLE PREROUTING rule for device ${tunnel.tun}`);
+                for (const rule of rulesPrerouting.filter(x => x.name == tunnel.tun)) {
+                    try {
+                        logger.info(`deleting iptables MANGLE PREROUTING rule ${rule.rule}`)
+                        await NetworkService.deleteMangleTableIptables(rule.rule);
+                    } catch (ignore) { }
+
+                }
+
                 const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
                 logger.info(`deleting iptables MANGLE OUTPUT rule for device ${tunnel.tun}`);
                 for (const rule of rulesOutput.filter(x => x.name == tunnel.tun)) {
