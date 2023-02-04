@@ -5,10 +5,11 @@ import { GatewayBasedTask } from "./gatewayBasedTask";
 import { EventEmitter } from "node:events";
 import NodeCache from "node-cache";
 import { TunnelService } from "rest.portal";
-import { ConfigWatch } from "rest.portal/service/redisConfigService";
+
 import { BroadcastService } from "../service/broadcastService";
 import { WatchItem } from "rest.portal/service/watchService";
 import { PolicyService } from "rest.portal";
+import { ConfigWatch } from "rest.portal/model/config";
 
 
 
@@ -42,7 +43,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
             logger.info(`system watcher tunnel expired id:${value.id} trackId:${value.trackId}`);
         })
 
-        this.redisConfigService.watch.on('log', async (data: WatchItem<any>) => {
+        this.redisConfigService.events.on('log', async (data: WatchItem<any>) => {
             //analyze all logs
             logger.info(`log received ${data?.val?.path}`)
             if (data.val.path.startsWith('/system/tunnels')) {
@@ -51,10 +52,10 @@ export class SystemWatcherTask extends GatewayBasedTask {
             this.bcastService.emit('log', data.val);
 
         })
-        this.redisConfigService.watch.on('configChanged', async (data: WatchItem<any>) => {
+        this.redisConfigService.events.on('configChanged', async (data: ConfigWatch<any>) => {
 
-            this.bcastService.emit('configChanged', data.val);
-            logger.info(`system watcher config changed ${data.val?.path}`);
+            this.bcastService.emit('configChanged', data);
+            logger.info(`system watcher config changed ${data.path}`);
         })
 
 
@@ -64,7 +65,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
         this.isStoping = false;
         await this.redisConfigService.start();
 
-        this.startTimer = await setIntervalAsync(async () => {
+        this.startTimer = setIntervalAsync(async () => {
             await this.loadAllTunnels();
             await this.processTunnelEvents();
         }, 500)

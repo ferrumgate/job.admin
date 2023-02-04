@@ -3,11 +3,12 @@
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { DockerService, Pod } from "../service/dockerService";
-import { ConfigEvent, logger, RedisService, Service } from "rest.portal";
+import { logger, RedisService, Service } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { BroadcastService } from "../service/broadcastService";
 import { RedisConfigWatchService } from "rest.portal";
-import { ConfigWatch } from "rest.portal/service/redisConfigService";
+import { ConfigWatch } from "rest.portal/model/config";
+
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  *@summary we need to check device tun devices againt to redis

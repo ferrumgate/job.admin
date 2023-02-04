@@ -1,8 +1,9 @@
-FROM node:18.12.1-bullseye-slim
+FROM node:18.13.0-bullseye-slim
 RUN apt update &&\
-    apt install --assume-yes --no-install-recommends iproute2 \
+    apt install --assume-yes --no-install-recommends iproute2 openssl \
     iputils-ping net-tools ipvsadm dnsutils iperf3 \
     ca-certificates gnupg curl tcpdump procps conntrack lsb-release
+RUN sed -i 's/providers = provider_sect/#providers = provider_sect/g' /etc/ssl/openssl.cnf
 #RUN  apt install --assume-yes --no-install-recommends podman fuse-overlayfs
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
@@ -25,9 +26,9 @@ RUN apt-get install --assume-yes --no-install-recommends docker-ce docker-ce-cli
 #ENV _CONTAINERS_USERNS_CONFIGURED=""
 
 #RUN touch /etc/containers/registries.conf.d/myregistry.conf
-#RUN echo "unqualified-search-registries = ['docker.io', 'quay.io', 'registry.ferrumgate.local']" >> /etc/containers/registries.conf
+#RUN echo "unqualified-search-registries = ['docker.io', 'quay.io', 'registry.ferrumgate.zero']" >> /etc/containers/registries.conf
 #RUN echo "[[registry]]" >> /etc/containers/registries.conf
-#RUN echo "location=\"registry.ferrumgate.local\"" >> /etc/containers/registries.conf
+#RUN echo "location=\"registry.ferrumgate.zero\"" >> /etc/containers/registries.conf
 #RUN echo "insecure=true" >> /etc/containers/registries.conf
 
 #Create app directory

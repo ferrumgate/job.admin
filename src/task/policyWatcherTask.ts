@@ -1,6 +1,6 @@
 import { Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchService, Service, Tunnel } from "rest.portal";
+import { ConfigWatch } from "rest.portal/model/config";
 import { PolicyAuthzResult } from "rest.portal/service/policyService";
-import { ConfigWatch } from "rest.portal/service/redisConfigService";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { BroadcastService } from "../service/broadcastService";
 import { LmdbService } from "../service/lmdbService";
@@ -36,7 +36,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         this.bcastEvents.on('configChanged', async (data: ConfigWatch<any>) => {
             await this.configChanged(data);
         })
-        this.configChangedTimer = await setIntervalAsync(async () => {
+        this.configChangedTimer = setIntervalAsync(async () => {
             await this.executeConfigChanged();
         }, 1000);
     }
