@@ -26,6 +26,10 @@ export class CheckIptablesCommon extends GatewayBasedTask {
 
     public async onConfigChanged(event: ConfigWatch<any>) {
         try {
+            if (event.path.startsWith('/config/flush')) {
+                logger.info(`config flushed check everything`);
+                await this.check();
+            }
             //TODO analyze what changed 
             if (event.path.startsWith('/config/gateways')) {
                 logger.info(`check immediately common iptable rules for gateways`);

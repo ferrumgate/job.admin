@@ -143,6 +143,9 @@ export class CheckServices extends GatewayBasedTask {
     public async onConfigChanged(event: ConfigWatch<any>) {
         try {
 
+            if (event.path.startsWith('/config/flush')) {
+                await this.closeAllServices();
+            }
             if (event.path.startsWith('/config/services') || event.path.startsWith('/config/gateways') || event.path.startsWith('/config/networks')) {
                 logger.info(`check immediately services`);
                 await this.checkServices();

@@ -113,6 +113,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     async configChanged(data: ConfigWatch<any>) {
         try {
             switch (data.path) {
+                case '/config/flush':
                 case '/config/networks':
                 case '/config/gateways':
                 case '/config/services':
