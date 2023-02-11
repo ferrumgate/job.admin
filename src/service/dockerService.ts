@@ -45,7 +45,8 @@ ${tcp_listen} ${udp_listen}
 -e GATEWAY_ID=${gatewayId}
 -e SERVICE_ID=${svc.id}
 -e INSTANCE_ID=${Util.randomNumberString(16)}
--e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'log:9292'}`
+-e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'log:9292'}
+-e POLICY_DB_FOLDER=${process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy'}`
         return env.replace(/\n/g, ' ');
     }
     async execute(cmd: string) {

@@ -5,7 +5,7 @@ import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { BroadcastService } from "../service/broadcastService";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
-
+import fs from 'fs';
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculates policy 
@@ -25,6 +25,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
     }
     async start() {
+
         this.lmdbService = await LmdbService.open('ferrumgate', this.dbFolder, 'string', 16);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
