@@ -17,6 +17,7 @@ import { WhenClientAuthenticated } from "./task/whenClientAuthenticated";
 import { WhenTunnelClosed } from "./task/whenTunnelClosed";
 import { PolicyWatcherTask } from "./task/policyWatcherTask";
 import fs from 'fs';
+import { DhcpService } from "rest.portal/service/dhcpService";
 
 
 
@@ -41,7 +42,7 @@ async function main() {
     const systemLog = new SystemLogService(redis, createRedis(redisOptions), encryptKey, 'job.admin');
 
     const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin');
-    const tunnelService = new TunnelService(redisConfig, redis);
+    const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const policyService = new PolicyService(redisConfig);
     const bcastService = new BroadcastService();
     const dockerService = new DockerService();

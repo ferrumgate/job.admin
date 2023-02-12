@@ -64,7 +64,7 @@ ${tcp_listen} ${udp_listen}
     }
     async run(svc: Service, gatewayId: string, network: string) {
         logger.info(`starting ferrum service ${svc.name}`)
-        let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:/var/lib/ferrumgate --volume /dev/urandom:/dev/urandom`
+        let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:${process.env.LMDB_FOLDER || '/var/lib/ferrumgate'} --volume /dev/urandom:/dev/urandom`
         let net = network ? `--net=${network}` : '';
         let pid = network ? `--pid=${network}` : '';
         await this.ipAddr(svc);

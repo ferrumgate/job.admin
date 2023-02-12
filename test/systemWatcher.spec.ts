@@ -13,6 +13,7 @@ import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
 import { BroadcastService } from '../src/service/broadcastService';
 import { SystemWatcherTask } from '../src/task/systemWatcherTask';
+import { DhcpService } from 'rest.portal/service/dhcpService';
 
 
 chai.use(chaiHttp);
@@ -74,7 +75,7 @@ describe('systemWatcher', () => {
         const config = new MockConfig();
         await config.start();
         await Util.sleep(3000);
-        const tunnelService = new TunnelService(config, redis);
+        const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
         await redis.hset(`/tunnel/id/${val1.id}`, val1);
         await redis.hset(`/tunnel/id/${val2.id}`, val2);
         const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
@@ -100,7 +101,7 @@ describe('systemWatcher', () => {
         const config = new MockConfig(systemlog);
         await config.start();
         await Util.sleep(3000);
-        const tunnelService = new TunnelService(config, redis);
+        const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
         const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.start();
@@ -126,7 +127,7 @@ describe('systemWatcher', () => {
         const config = new MockConfig(systemlog);
         await config.start();
         await Util.sleep(3000);
-        const tunnelService = new TunnelService(config, redis);
+        const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
         const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.start();
