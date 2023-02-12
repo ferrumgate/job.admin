@@ -1,11 +1,12 @@
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigEvent, logger, Network, RedisService } from "rest.portal";
+import { logger, Network, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { RedisConfigWatchService } from "rest.portal";
 import { BroadcastService } from "../service/broadcastService";
-import { ConfigWatch } from "rest.portal/service/redisConfigService";
+
 import { Gateway } from "rest.portal";
+import { ConfigWatch } from "rest.portal/model/config";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
@@ -25,6 +26,10 @@ export class CheckIptablesCommon extends GatewayBasedTask {
 
     public async onConfigChanged(event: ConfigWatch<any>) {
         try {
+            if (event.path.startsWith('/config/flush')) {
+                logger.info(`config flushed check everything`);
+                await this.check();
+            }
             //TODO analyze what changed 
             if (event.path.startsWith('/config/gateways')) {
                 logger.info(`check immediately common iptable rules for gateways`);

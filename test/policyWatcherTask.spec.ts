@@ -15,6 +15,7 @@ import { BroadcastService } from '../src/service/broadcastService';
 import { SystemWatcherTask } from '../src/task/systemWatcherTask';
 import { PolicyWatcherTask } from '../src/task/policyWatcherTask';
 import { AuthorizationRule } from 'rest.portal/model/authorizationPolicy';
+import { DhcpService } from 'rest.portal/service/dhcpService';
 
 
 chai.use(chaiHttp);
@@ -334,7 +335,7 @@ describe('policyWatcherTask', () => {
         //await redisConfigService.start();
         const policyService = new PolicyService(redisConfigService);
         const bcastService = new BroadcastService();
-        const systemWatcher = new SystemWatcherTask(new RedisService(), redisConfigService, new TunnelService(redisConfigService, new RedisService()), bcastService);
+        const systemWatcher = new SystemWatcherTask(new RedisService(), redisConfigService, new TunnelService(redisConfigService, new RedisService(), new DhcpService(redisConfigService, new RedisService())), bcastService);
         await systemWatcher.start();
 
 

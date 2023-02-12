@@ -10,7 +10,7 @@ import { BroadcastService } from '../src/service/broadcastService';
 import { RedisOptions } from '../src/model/redisOptions';
 import { DockerService } from '../src/service/dockerService';
 import { CheckServices } from '../src/task/checkServices';
-
+import fs from 'fs';
 
 
 
@@ -20,6 +20,10 @@ const expect = chai.expect;
 const tmpfolder = '/tmp/ferrumtest';
 describe('checkServices', () => {
     const simpleRedis = new RedisService();
+    before(async () => {
+        if (!fs.existsSync('/tmp/abc'))
+            fs.mkdirSync('/tmp/abc');
+    })
     beforeEach(async () => {
         await simpleRedis.flushAll();
 

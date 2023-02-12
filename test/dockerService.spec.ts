@@ -109,14 +109,14 @@ describe('dockerService', () => {
                 if (!this.counter) {
                     this.counter++;
                     return `
-fa366965bd90a1f004592286785b870016510e9e4ca7cfd82b7ea426a37e4c1a registry.ferrumgate.local/ferrumgate/ferrum.io:latest test-blabla
-2657ea83a55d85485abb4df94c59c2d128ce9355831b70cfa3d8a4fa4984327d registry.ferrumgate.local/ferrumgate/job.admin:1.0.0 ferrumgate-admin-1
+fa366965bd90a1f004592286785b870016510e9e4ca7cfd82b7ea426a37e4c1a registry.ferrumgate.zero/ferrumgate/ferrum.io:latest test-blabla
+2657ea83a55d85485abb4df94c59c2d128ce9355831b70cfa3d8a4fa4984327d registry.ferrumgate.zero/ferrumgate/job.admin:1.0.0 ferrumgate-admin-1
 cc95b3305d802f0058e52d7ce6e9f4e0f47cf1da0a2b12f108ef5ee16cba8acb nginx:1.23-alpine ferrumgate-nginx-1
-71c151c386fb86a0b3b5fd59c3a7240bf3d7ceaef38b97c9c41771ac2194ef1b registry.ferrumgate.local/ferrumgate/rest.portal:1.0.0 ferrumgate-rest-1
-d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrumgate.local/ferrumgate/secure.server:1.0.0 ferrumgate-server-1
+71c151c386fb86a0b3b5fd59c3a7240bf3d7ceaef38b97c9c41771ac2194ef1b registry.ferrumgate.zero/ferrumgate/rest.portal:1.0.0 ferrumgate-rest-1
+d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrumgate.zero/ferrumgate/secure.server:1.0.0 ferrumgate-server-1
 55a2b5a467d6c406867705bbeb5b5a8c5219c647ef184dfa97c2d9c916c82c0f redis:7-bullseye ferrumgate-redis-local-1
 6ed84cb668158c387af89a1ebe373acc4f9c4e0f5266fd2aaddc30e506b40d08 redis:7-bullseye ferrumgate-redis-1
-32600408756ea709398f521dc4a9021940617c5784f503e2c7396841d271f322 registry.ferrumgate.local/ferrumgate/ui.portal:1.0.0 ferrumgate-ui-1
+32600408756ea709398f521dc4a9021940617c5784f503e2c7396841d271f322 registry.ferrumgate.zero/ferrumgate/ui.portal:1.0.0 ferrumgate-ui-1
             `
                 } else {
                     if (fs.existsSync('inspect.json'))
@@ -137,7 +137,7 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
 
         expect(containers.length).to.equal(8);
         expect(containers[0].id).to.equal(`fa366965bd90a1f004592286785b870016510e9e4ca7cfd82b7ea426a37e4c1a`);
-        expect(containers[0].image).to.equal(`registry.ferrumgate.local/ferrumgate/ferrum.io:latest`);
+        expect(containers[0].image).to.equal(`registry.ferrumgate.zero/ferrumgate/ferrum.io:latest`);
         expect(containers[0].name).to.equal(`test-blabla`);
         expect(containers[0].details.Config.Labels.Ferrum_Svc_LastUpdate).exist;
 

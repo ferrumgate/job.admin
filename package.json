@@ -1,10 +1,10 @@
 {
   "name": "job.admin",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "manages machine network",
   "main": "index.js",
   "scripts": {
-    "test": "NODE_ENV=development DEBUG2=nock.* node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/**.spec.ts",
+    "test": "NODE_ENV=development POLICY_DB_FOLDER=/tmp/abc DEBUG2=nock.* node ./node_modules/mocha/bin/mocha --exit --timeout 30000 --require ts-node/register test/**/**.spec.ts",
     "testintegration": "DEBUG=nock.* node ./node_modules/mocha/bin/mocha --exit  --require ts-node/register test/**/*.spec.integration.ts",
     "build": "tsc ",
     "start": "tsc && NODE_ENV=development  node ./build/src/main.js",
@@ -16,7 +16,7 @@
     "url": "git+ssh://git@gitlab.com/ferrumgate/job.admin.git"
   },
   "publishConfig": {
-    "tag": "rest.portal@1.1.0"
+    "tag": "rest.portal@1.2.0"
   },
   "author": "",
   "license": "ISC",
