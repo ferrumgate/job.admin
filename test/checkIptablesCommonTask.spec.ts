@@ -56,14 +56,10 @@ describe('checkIptablesCommonTask', () => {
                 return undefined;
             }
         }
-        class CheckIptablesCommonMock extends CheckIptablesCommon {
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
-        }
+
 
         const bcast = new BroadcastService();
-        const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
+        const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
         let methodCalled = false;
         NetworkService.blockToIptablesCommon = async () => {
@@ -82,14 +78,9 @@ describe('checkIptablesCommonTask', () => {
                 return { isEnabled: false } as Gateway;
             }
         }
-        class CheckIptablesCommonMock extends CheckIptablesCommon {
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
-        }
 
         const bcast = new BroadcastService();
-        const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
+        const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
         let methodCalled = false;
         NetworkService.blockToIptablesCommon = async () => {
@@ -111,15 +102,11 @@ describe('checkIptablesCommonTask', () => {
                 return null;
             }
         }
-        class CheckIptablesCommonMock extends CheckIptablesCommon {
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
-        }
+
 
 
         const bcast = new BroadcastService();
-        const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
+        const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
         let methodCalled = false;
         NetworkService.blockToIptablesCommon = async () => {
@@ -141,15 +128,10 @@ describe('checkIptablesCommonTask', () => {
                 return { id: '1234', isEnabled: false } as Network;
             }
         }
-        class CheckIptablesCommonMock extends CheckIptablesCommon {
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
-        }
 
 
         const bcast = new BroadcastService();
-        const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
+        const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
         let methodCalled = false;
         NetworkService.blockToIptablesCommon = async () => {
@@ -171,15 +153,10 @@ describe('checkIptablesCommonTask', () => {
                 return { id: '1234', isEnabled: true } as Network;
             }
         }
-        class CheckIptablesCommonMock extends CheckIptablesCommon {
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
-        }
 
 
         const bcast = new BroadcastService();
-        const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
+        const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
         let methodCalled = false;
         NetworkService.blockToIptablesCommon = async () => {
@@ -204,9 +181,7 @@ describe('checkIptablesCommonTask', () => {
         }
         class CheckIptablesCommonMock extends CheckIptablesCommon {
             isCheckCalled = false
-            setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
+
             public override async check(): Promise<void> {
                 this.isCheckCalled = true;
             }

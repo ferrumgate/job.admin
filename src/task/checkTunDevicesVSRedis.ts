@@ -3,6 +3,7 @@ import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
 import { logger, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
+import { TunService } from "../service/tunService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * @summary we need to check device tun devices againt to redis
@@ -31,9 +32,8 @@ export class CheckTunDevicesVSRedis extends GatewayBasedTask {
                     if (this.gatewayId && device) {
                         const tunnelKey = await this.redis?.get(`/gateway/${this.gatewayId}/tun/${device}`, false) as string
                         if (!tunnelKey) {//there is a problem delete tun device
-                            logger.info(`deleting device ${device} not exits on host ${this.gatewayId}`);
-                            await NetworkService.linkDelete(device);
-
+                            logger.warn(`deleting device ${device} not exits on gateway ${this.gatewayId}`);
+                            await TunService.delete(device);
                         }
                     }
                 }
