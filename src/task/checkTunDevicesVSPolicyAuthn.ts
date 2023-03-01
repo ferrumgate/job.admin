@@ -6,6 +6,7 @@ import { RedisOptions } from "../model/redisOptions";
 import { TunService } from "../service/tunService";
 import { BroadcastService } from "../service/broadcastService";
 import { ConfigWatch } from "rest.portal/model/config";
+import NodeCache from "node-cache";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * @summary we need to check tun devices to authentication rules
@@ -18,6 +19,9 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
     protected configChangedTimes: number[] = [];
     protected configChangedTimer: any;
     protected lastCheckTime2 = new Date(1).getTime();
+    protected tunnelKeysForTryAgain = new NodeCache({
+        stdTTL: 5 * 60, useClones: false, checkperiod: 10 * 60
+    })
     constructor(protected redis: RedisService, protected bcastEvents: BroadcastService, protected configService: ConfigService, protected tunnelService: TunnelService,
         protected sessionService: SessionService, protected policyService: PolicyService) {
         super();
@@ -35,6 +39,16 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
                     if (this.gatewayId && device) {
                         const tunnelKey = await this.redis?.get(`/gateway/${this.gatewayId}/tun/${device}`, false) as string
                         if (!tunnelKey) {//there is a problem delete tun device
+                            if (!this.tunnelKeysForTryAgain.has(device))//there can be a sync problem, wait for tunnel confirm 60 seconds
+                            {
+                                logger.warn(`device ${device} not found on /gateway path, we will try later`);
+                                this.tunnelKeysForTryAgain.set(device, new Date().getTime() + 1 * 60 * 1000);//
+                                continue;
+                            }
+                            if (this.tunnelKeysForTryAgain.get(device) as number > new Date().getTime()) {
+                                logger.warn(`device ${device} not found on /gateway path, we will try later`);
+                                continue;
+                            }
                             logger.warn(`deleting device ${device} not exits on gateway ${this.gatewayId}`);
                             await TunService.delete(device);
                             continue;

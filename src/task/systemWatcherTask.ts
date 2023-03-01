@@ -35,7 +35,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
         super();
 
         this.tunnels = new NodeCache({
-            stdTTL: 7 * 60 * 1000, useClones: false, checkperiod: 10 * 60 * 1000
+            stdTTL: 7 * 60, useClones: false, checkperiod: 10 * 60
         })
         this.tunnels.on('expired', async (key: string, value: Tunnel) => {
 
@@ -113,7 +113,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
                 if (ev.path == '/system/tunnels/confirm') {
                     const data = ev.val as Tunnel;
                     if (data?.id) {
-                        this.tunnels.set(data.id, data, 5 * 60 * 1000);
+                        this.tunnels.set(data.id, data, 5 * 60);
                         if (data.gatewayId == this.gatewayId) {
 
                             this.bcastService.emit('tunnelConfigure', data);
@@ -126,7 +126,7 @@ export class SystemWatcherTask extends GatewayBasedTask {
                     if (data?.id && data.gatewayId == this.gatewayId) {
                         if (this.tunnels.has(data.id)) {
 
-                            this.tunnels.ttl(data.id, 5 * 60 * 1000);
+                            this.tunnels.ttl(data.id, 5 * 60);
                             logger.info(`system watcher tunnel alive id:${data.id} trackId:${data.trackId}`)
                         }
                     }
