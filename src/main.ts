@@ -1,5 +1,5 @@
 
-import { RedisConfigWatchCachedService, TunnelService } from "rest.portal";
+import { RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
@@ -18,6 +18,7 @@ import { WhenTunnelClosed } from "./task/whenTunnelClosed";
 import { PolicyWatcherTask } from "./task/policyWatcherTask";
 import fs from 'fs';
 import { DhcpService } from "rest.portal/service/dhcpService";
+import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
 
 
 
@@ -43,6 +44,7 @@ async function main() {
 
     const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin');
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
+    const sessionService = new SessionService(redisConfig, redis);
     const policyService = new PolicyService(redisConfig);
     const bcastService = new BroadcastService();
     const dockerService = new DockerService();
@@ -85,6 +87,11 @@ async function main() {
     //follow services
     const checkServices = new CheckServices(redisConfig, bcastService, dockerService);
     await checkServices.start();
+
+    //check policy authentication
+    const checkTunVSPolicyAuthn = new CheckTunDevicesPolicyAuthn(redis, bcastService,
+        redisConfig, tunnelService, sessionService, policyService);
+    await checkTunVSPolicyAuthn.start();
 
 
 

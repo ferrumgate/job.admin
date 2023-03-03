@@ -6,6 +6,7 @@ import { GatewayBasedTask } from "./gatewayBasedTask";
 import { HelperService, logger, RedisService, Tunnel } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { BroadcastService } from "../service/broadcastService";
+import { TunService } from "../service/tunService";
 
 
 /**
@@ -29,45 +30,7 @@ export class WhenTunnelClosed extends GatewayBasedTask {
             if (tunnel.gatewayId != this.gatewayId) return;//this is important only tunnels in current machine
             if (tunnel.tun) {
                 // delete tunnel data from redis
-                const rulesInput = await NetworkService.getInputTableDeviceRules();
-                logger.info(`deleting iptables INPUT rule for device ${tunnel.tun}`);
-                for (const rule of rulesInput.filter(x => x.name == tunnel.tun)) {
-                    try {
-                        logger.info(`deleting iptables INPUT rule ${rule.rule}`)
-                        await NetworkService.deleteTableIptables(rule.rule);
-                    } catch (ignore) { }
-
-                }
-
-                const rulesPrerouting = await NetworkService.getManglePreroutingTableDeviceRules();
-                logger.info(`deleting iptables MANGLE PREROUTING rule for device ${tunnel.tun}`);
-                for (const rule of rulesPrerouting.filter(x => x.name == tunnel.tun)) {
-                    try {
-                        logger.info(`deleting iptables MANGLE PREROUTING rule ${rule.rule}`)
-                        await NetworkService.deleteMangleTableIptables(rule.rule);
-                    } catch (ignore) { }
-
-                }
-
-                const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
-                logger.info(`deleting iptables MANGLE OUTPUT rule for device ${tunnel.tun}`);
-                for (const rule of rulesOutput.filter(x => x.name == tunnel.tun)) {
-                    try {
-                        logger.info(`deleting iptables MANGLE OUTPUT rule ${rule.rule}`)
-                        await NetworkService.deleteMangleTableIptables(rule.rule);
-                    } catch (ignore) { }
-
-                }
-
-                const rulesPostrouting = await NetworkService.getManglePostroutingTableDeviceRules();
-                logger.info(`deleting iptables MANGLE POSTROUTING rule for device ${tunnel.tun}`);
-                for (const rule of rulesPostrouting.filter(x => x.name == tunnel.tun)) {
-                    try {
-                        logger.info(`deleting iptables MANGLE POSTROUTING rule ${rule.rule}`)
-                        await NetworkService.deleteMangleTableIptables(rule.rule);
-                    } catch (ignore) { }
-
-                }
+                TunService.deleteIptableRules(tunnel.tun);
             }
 
         } catch (err) {

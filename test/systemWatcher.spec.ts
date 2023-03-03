@@ -44,11 +44,7 @@ describe('systemWatcher', () => {
 
         }
     }
-    class MockSystemWatcherTask extends SystemWatcherTask {
-        setGatewayId(id: string) {
-            this.gatewayId = id;
-        }
-    }
+
     async function getSampleTunnel() {
         const tunnel1: Tunnel = {
             id: '123', tun: 'ferrum2', assignedClientIp: '1.2.3.4',
@@ -78,7 +74,7 @@ describe('systemWatcher', () => {
         const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
         await redis.hset(`/tunnel/id/${val1.id}`, val1);
         await redis.hset(`/tunnel/id/${val2.id}`, val2);
-        const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
+        const watcher = new SystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.loadAllTunnels();
         await Util.sleep(1000);
@@ -102,7 +98,7 @@ describe('systemWatcher', () => {
         await config.start();
         await Util.sleep(3000);
         const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
-        const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
+        const watcher = new SystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.start();
         await systemlog.write({ path: '/config/users', type: 'put', val: { id: '1231' } })
@@ -128,7 +124,7 @@ describe('systemWatcher', () => {
         await config.start();
         await Util.sleep(3000);
         const tunnelService = new TunnelService(config, redis, new DhcpService(config, redis));
-        const watcher = new MockSystemWatcherTask(redis, config, tunnelService, bcast);
+        const watcher = new SystemWatcherTask(redis, config, tunnelService, bcast);
         watcher.setGatewayId('12345');
         await watcher.start();
         await systemlog.write({ path: '/system/tunnels/confirm', type: 'put', val: { id: '1231', gatewayId: '12345' } })

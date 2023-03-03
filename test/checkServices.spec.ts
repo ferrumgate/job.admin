@@ -95,17 +95,13 @@ describe('checkServices', () => {
 
         }
     }
-    class CheckServicesMock extends CheckServices {
-        setGatewayId(id: string) {
-            this.gatewayId = id;
-        }
-    }
+
     it('closeAllServices', async () => {
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
 
-        const checkservices = new CheckServicesMock(new MockConfig(), new BroadcastService(), docker);
+        const checkservices = new CheckServices(new MockConfig(), new BroadcastService(), docker);
         checkservices.setGatewayId('231a0932');
 
         await docker.run(service, '231a0932', 'host');
@@ -121,7 +117,7 @@ describe('checkServices', () => {
         const docker = new DockerService();
 
         const config = new MockConfig();
-        const checkservices = new CheckServicesMock(config, new BroadcastService(), docker);
+        const checkservices = new CheckServices(config, new BroadcastService(), docker);
         checkservices.setGatewayId('231a0932');
         let closeAllCalled = false;
         const realcloseAllServices = checkservices.closeAllServices;
@@ -214,7 +210,7 @@ describe('checkServices', () => {
 
 
         const config = new MockConfig();
-        const checkservices = new CheckServicesMock(config, new BroadcastService(), docker);
+        const checkservices = new CheckServices(config, new BroadcastService(), docker);
         checkservices.setGatewayId('231a0932');
 
         const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;

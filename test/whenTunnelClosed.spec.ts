@@ -57,9 +57,7 @@ describe('whenTunnelClosed', () => {
             protected override async readGatewayId(): Promise<void> {
                 this.gatewayId = 'agatewayid';
             }
-            public setGatewayId(id: string) {
-                this.gatewayId = id;
-            }
+
         }
 
         const bcast = new BroadcastService();

@@ -46,12 +46,7 @@ describe('policyWatcherTask', () => {
 
         }
     }
-    class MockPolicyWatcherTask extends PolicyWatcherTask {
-        setGatewayId(id: string) {
-            this.gatewayId = id;
-        }
 
-    }
 
     function createSampleData() {
         let network: Network = {
@@ -161,7 +156,7 @@ describe('policyWatcherTask', () => {
             service2, user1, rule1,
             tunnel1, tunnel2 } = await createSampleData();
 
-        const watcher = new MockPolicyWatcherTask(tmpfolder, policyService,
+        const watcher = new PolicyWatcherTask(tmpfolder, policyService,
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
         await watcher.start();
@@ -207,7 +202,7 @@ describe('policyWatcherTask', () => {
             service2, user1, rule1,
             tunnel1, tunnel2 } = await createSampleData();
 
-        const watcher = new MockPolicyWatcherTask(tmpfolder, policyService,
+        const watcher = new PolicyWatcherTask(tmpfolder, policyService,
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
         await watcher.start();
@@ -268,7 +263,7 @@ describe('policyWatcherTask', () => {
             service2, user1, rule1,
             tunnel1, tunnel2 } = await createSampleData();
 
-        const watcher = new MockPolicyWatcherTask(tmpfolder, policyService,
+        const watcher = new PolicyWatcherTask(tmpfolder, policyService,
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
         await watcher.start();
@@ -339,7 +334,7 @@ describe('policyWatcherTask', () => {
         await systemWatcher.start();
 
 
-        const watcher = new MockPolicyWatcherTask(tmpfolder, policyService,
+        const watcher = new PolicyWatcherTask(tmpfolder, policyService,
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
         await watcher.start();
