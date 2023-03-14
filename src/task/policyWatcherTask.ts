@@ -27,6 +27,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     async start() {
 
         this.lmdbService = await LmdbService.open('ferrumgate', this.dbFolder, 'string', 16);
+        logger.info(`opening policy lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
             await this.tunnelExpired(tun);

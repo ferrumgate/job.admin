@@ -82,14 +82,16 @@ export class CheckServices extends GatewayBasedTask {
             }
 
             const services = await this.configService.getServicesByNetworkId(network.id);
+            const rootFqdn = await this.configService.getDomain();
             const running = await this.dockerService.getAllRunning();
-            await this.compare(running, services);
+
+            await this.compare(running, services, rootFqdn);
 
         } catch (err) {
             logger.error(err);
         }
     }
-    async compare(running: Pod[], services: Service[]) {
+    async compare(running: Pod[], services: Service[], rootFqdn: string) {
         await this.readGatewayId();
         let restartList = [];
         for (const run of running.filter(x => x.name.startsWith('ferrumgate-svc'))) {//check running services that must stop
@@ -121,7 +123,7 @@ export class CheckServices extends GatewayBasedTask {
             if (!run) {//not running 
                 logger.info(`not running service found ${svc.name}`);
                 try {
-                    await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`);
+                    await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`, rootFqdn);
                 } catch (ignore: any) {
                     logger.error(ignore);
                 }
@@ -130,7 +132,7 @@ export class CheckServices extends GatewayBasedTask {
         for (const svc of restartList) {
             logger.info(`restart service found ${svc.name}`);
             try {
-                await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`);
+                await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`, rootFqdn);
             } catch (ignore: any) {
                 logger.error(ignore);
             }

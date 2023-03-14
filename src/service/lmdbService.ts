@@ -1,3 +1,4 @@
+import { dir } from 'console';
 import lmdb from 'lmdb';
 
 /**
@@ -7,34 +8,38 @@ export class LmdbService {
     /**
      *
      */
-    static rootDatabase: lmdb.RootDatabase | null;
+    static rootDatabases: Map<string, lmdb.RootDatabase> = new Map();
     database!: lmdb.Database;
     constructor(database: lmdb.Database) {
         this.database = database;
     }
     static async close() {
-        if (this.rootDatabase)
-            await this.rootDatabase.close();
-        LmdbService.rootDatabase = null;
+        for (const root of LmdbService.rootDatabases.values()) {
+            await root.close();
+        }
+        this.rootDatabases.clear();
     }
-    static async open(name: string, dirname?: string, encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'msgpack', maxDb = 3,
+    static async open(name: string, dirname: string = '.', encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'string', maxDb = 3,
         maxSize = 1073741824, dupSort = false,
     ): Promise<LmdbService> {
-        if (!LmdbService.rootDatabase) {
-            LmdbService.rootDatabase = lmdb.open(dirname || '.', {
+        if (!LmdbService.rootDatabases.has(dirname)) {
+            const rootDatabase = lmdb.open(dirname, {
                 mapSize: maxSize,
                 maxDbs: maxDb,
                 dupSort: dupSort,
                 encoding: encoding
             })
+            LmdbService.rootDatabases.set(dirname, rootDatabase);
         }
+        const rootDatabase = LmdbService.rootDatabases.get(dirname) as lmdb.RootDatabase;
 
-        const database = LmdbService.rootDatabase.openDB(
+        const database = rootDatabase.openDB(
             {
                 name: name,
             }
         )
         return new LmdbService(database);
+
 
     }
     async clear() {

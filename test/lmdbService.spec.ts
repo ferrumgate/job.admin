@@ -32,7 +32,7 @@ describe('lmdbService', () => {
 
     it('open', async () => {
 
-        const lmdb = await LmdbService.open('ferrum', tmpfolder);
+        const lmdb = await LmdbService.open('ferrum', tmpfolder, 'string');
         await lmdb.close();
 
 
@@ -157,6 +157,18 @@ describe('lmdbService', () => {
 
         let item2 = await lmdb.get('/test/1');
         expect(item2).to.equal('hamza');
+
+        await lmdb.close();
+
+
+    }).timeout(10000)
+
+
+    it('get/put', async () => {
+
+        const lmdb = await LmdbService.open('dns', '/tmp/dns', 'string');
+        let item2 = await lmdb.get('/local/dns/test.ferrumgate.zero/a');
+        await lmdb.put('/local/dns/test.ferrumgate.zero/a', '192.168.100.100');
 
         await lmdb.close();
 
