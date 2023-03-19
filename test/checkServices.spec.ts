@@ -104,7 +104,7 @@ describe('checkServices', () => {
         const checkservices = new CheckServices(new MockConfig(), new BroadcastService(), docker);
         checkservices.setGatewayId('231a0932');
 
-        await docker.run(service, '231a0932', 'host');
+        await docker.run(service, '231a0932', 'host', 'ferrumgate.zero');
         await checkservices.closeAllServices();
         const pods = await docker.getAllRunning();
         expect(pods.find(x => x.name.includes('ferrumgate-svc'))).to.be.undefined;
@@ -220,10 +220,10 @@ describe('checkServices', () => {
         }
         await Util.exec(`docker run -d --rm --name secure.server -p 9393:80 nginx`);
         //start 1 services
-        await docker.run(service, 'abc', 'host');
+        await docker.run(service, 'abc', 'host', 'ferrumgate.zero');
 
         const runnings = await docker.getAllRunning();
-        await checkservices.compare(runnings, [service]);
+        await checkservices.compare(runnings, [service], 'ferrumgate.zero');
 
         const runnings2 = await docker.getAllRunning();
         expect(runnings2.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
@@ -233,11 +233,11 @@ describe('checkServices', () => {
         const service2 = JSON.parse(JSON.stringify(service));
         service2.id = '15';
         await Util.sleep(1000);
-        await docker.run(service, '231a0932', 'host');
-        await docker.run(service2, '231a0932', 'host');
+        await docker.run(service, '231a0932', 'host', 'ferrumgate.zero');
+        await docker.run(service2, '231a0932', 'host', 'ferrumgate.zero');
 
         const runnings3 = await docker.getAllRunning();
-        await checkservices.compare(runnings3, [service]);
+        await checkservices.compare(runnings3, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
         const runnings4 = await docker.getAllRunning();
         expect(runnings4.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);

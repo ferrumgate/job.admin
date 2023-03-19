@@ -1,5 +1,5 @@
 
-import { RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
+import { InputService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
@@ -19,6 +19,7 @@ import { PolicyWatcherTask } from "./task/policyWatcherTask";
 import fs from 'fs';
 import { DhcpService } from "rest.portal/service/dhcpService";
 import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
+import { CheckLocalDns } from "./task/checkLocalDns";
 
 
 
@@ -49,12 +50,18 @@ async function main() {
     const bcastService = new BroadcastService();
     const dockerService = new DockerService();
 
+    const inputService = new InputService();
 
 
     const dbFolder = process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
     await fs.mkdirSync(dbFolder, { recursive: true });
     const policyWatcher = new PolicyWatcherTask(dbFolder, policyService, redisConfig, bcastService);
     await policyWatcher.start();
+
+    const dnsDbFolder = process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns';
+    await fs.mkdirSync(dnsDbFolder, { recursive: true });
+    const localDns = new CheckLocalDns(dnsDbFolder, redisConfig, bcastService, inputService);
+    await localDns.start();
 
 
 
@@ -110,6 +117,7 @@ async function main() {
         await iAmAlive.stop();
         await checkServices.stop();
         await redisConfig.stop();
+        await localDns.stop();
 
 
 
