@@ -1,5 +1,5 @@
 
-import { InputService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
+import { ESService, InputService, IpIntelligenceService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
@@ -46,7 +46,8 @@ async function main() {
     const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin');
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
-    const policyService = new PolicyService(redisConfig);
+    const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+    const policyService = new PolicyService(redisConfig, ipIntelligenceService);
     const bcastService = new BroadcastService();
     const dockerService = new DockerService();
 

@@ -12,7 +12,7 @@ import fs from 'fs';
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
 import { NetworkService } from '../src/service/networkService';
 import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
-import { Gateway, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, User, Util } from 'rest.portal';
+import { ESService, Gateway, InputService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, User, Util } from 'rest.portal';
 import { CheckTunDevicesPolicyAuthn } from '../src/task/checkTunDevicesVSPolicyAuthn';
 import { BroadcastService } from '../src/service/broadcastService';
 import { DhcpService } from 'rest.portal/service/dhcpService';
@@ -40,7 +40,8 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
     const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(), systemLog, true, enckey, 'job.admin');
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
-    const policyService = new PolicyService(redisConfig);
+    const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+    const policyService = new PolicyService(redisConfig, ipIntelligenceService);
     const bcastService = new BroadcastService();
     before(async () => {
         await configService.start();

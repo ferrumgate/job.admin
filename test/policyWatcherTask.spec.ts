@@ -8,7 +8,7 @@ import chaiHttp from 'chai-http';
 import fs, { watch } from 'fs';
 import { IAmAlive } from '../src/task/iAmAlive';
 
-import { Gateway, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisConfigWatchService, RedisService, Service, SystemLogService, Tunnel, TunnelService, User, Util } from 'rest.portal';
+import { ESService, Gateway, InputService, IpIntelligenceListService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisConfigWatchService, RedisService, Service, SystemLogService, Tunnel, TunnelService, User, Util } from 'rest.portal';
 import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
 import { BroadcastService } from '../src/service/broadcastService';
@@ -25,6 +25,7 @@ const tmpfolder = '/tmp/ferrumtest';
 const encKey = 'unvjukt3i62bxkr0d6f0lpvlho5fvqb1'
 describe('policyWatcherTask', () => {
     const redis = new RedisService();
+
 
     beforeEach(async () => {
         await redis.flushAll();
@@ -149,7 +150,8 @@ describe('policyWatcherTask', () => {
         const redisConfigService = new RedisConfigWatchCachedService(new RedisService(),
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
-        const policyService = new PolicyService(redisConfigService);
+        const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+        const policyService = new PolicyService(redisConfigService, ipIntelligenceService);
         const bcastService = new BroadcastService();
 
         const { network, gateway, service1,
@@ -195,7 +197,8 @@ describe('policyWatcherTask', () => {
         const redisConfigService = new RedisConfigWatchCachedService(new RedisService(),
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
-        const policyService = new PolicyService(redisConfigService);
+        const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+        const policyService = new PolicyService(redisConfigService, ipIntelligenceService);
         const bcastService = new BroadcastService();
 
         const { network, gateway, service1,
@@ -256,7 +259,8 @@ describe('policyWatcherTask', () => {
         const redisConfigService = new RedisConfigWatchCachedService(new RedisService(),
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
-        const policyService = new PolicyService(redisConfigService);
+        const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+        const policyService = new PolicyService(redisConfigService, ipIntelligenceService);
         const bcastService = new BroadcastService();
 
         const { network, gateway, service1,
@@ -328,7 +332,8 @@ describe('policyWatcherTask', () => {
         const redisConfigService = new RedisConfigWatchCachedService(new RedisService(),
             new RedisService(), systemLog, true, encKey);
         //await redisConfigService.start();
-        const policyService = new PolicyService(redisConfigService);
+        const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
+        const policyService = new PolicyService(redisConfigService, ipIntelligenceService);
         const bcastService = new BroadcastService();
         const systemWatcher = new SystemWatcherTask(new RedisService(), redisConfigService, new TunnelService(redisConfigService, new RedisService(), new DhcpService(redisConfigService, new RedisService())), bcastService);
         await systemWatcher.start();
