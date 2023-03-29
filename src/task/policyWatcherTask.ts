@@ -2,10 +2,10 @@ import { Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchSer
 import { ConfigWatch } from "rest.portal/model/config";
 import { PolicyAuthzResult } from "rest.portal/service/policyService";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
-import { BroadcastService } from "../service/broadcastService";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import fs from 'fs';
+import { BroadcastService } from "rest.portal/service/broadcastService";
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculates policy 

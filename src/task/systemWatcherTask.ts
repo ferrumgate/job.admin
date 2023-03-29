@@ -5,11 +5,10 @@ import { GatewayBasedTask } from "./gatewayBasedTask";
 import { EventEmitter } from "node:events";
 import NodeCache from "node-cache";
 import { TunnelService } from "rest.portal";
-
-import { BroadcastService } from "../service/broadcastService";
 import { WatchItem } from "rest.portal/service/watchService";
 import { PolicyService } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 
 
 

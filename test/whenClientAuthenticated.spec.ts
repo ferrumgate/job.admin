@@ -10,7 +10,8 @@ import fs from 'fs';
 
 import { RedisService, Tunnel, Util } from 'rest.portal';
 import { RedisOptions } from '../src/model/redisOptions';
-import { BroadcastService } from '../src/service/broadcastService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
+
 
 
 

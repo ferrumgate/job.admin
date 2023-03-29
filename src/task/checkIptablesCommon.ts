@@ -3,10 +3,11 @@ import { NetworkService } from "../service/networkService";
 import { logger, Network, RedisService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { RedisConfigWatchService } from "rest.portal";
-import { BroadcastService } from "../service/broadcastService";
+
 
 import { Gateway } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***

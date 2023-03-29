@@ -13,8 +13,8 @@ import fs from 'fs';
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
 import { Gateway, Network, RedisConfigWatchService, RedisService, SystemLogService, Util } from 'rest.portal';
 import { RedisOptions } from '../src/model/redisOptions';
-import { BroadcastService } from '../src/service/broadcastService';
 import { NetworkService } from '../src/service/networkService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 
 
 

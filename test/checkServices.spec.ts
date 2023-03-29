@@ -6,11 +6,11 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { RedisService, SystemLogService } from 'rest.portal';
 import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
-import { BroadcastService } from '../src/service/broadcastService';
 import { RedisOptions } from '../src/model/redisOptions';
 import { DockerService } from '../src/service/dockerService';
 import { CheckServices } from '../src/task/checkServices';
 import fs from 'fs';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 
 
 
