@@ -4,9 +4,9 @@ import { NetworkService } from "../service/networkService";
 import { ConfigService, logger, PolicyService, RedisService, SessionService, TunnelService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { TunService } from "../service/tunService";
-import { BroadcastService } from "../service/broadcastService";
 import { ConfigWatch } from "rest.portal/model/config";
 import NodeCache from "node-cache";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * @summary we need to check tun devices to authentication rules
@@ -82,13 +82,14 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
                         try {
                             const result = await this.policyService.authenticate(user, session, tunnel);
                             logger.info(`device ${device} policy authentication is ok on gateway ${this.gatewayId}`)
-                        } catch (ignore) {
+                        } catch (ignore: any) {
                             if (this.policyService.errorNumber) {
                                 logger.warn(`deleting device ${device} policy not valid on gateway ${this.gatewayId}`);
                                 await TunService.delete(device);
                                 await this.sessionService.deleteSession(session.id);
                                 continue;
                             }
+                            logger.error(ignore);
                         }
 
 

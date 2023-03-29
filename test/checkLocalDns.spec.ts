@@ -6,7 +6,6 @@ import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { InputService, RedisService, SystemLogService } from 'rest.portal';
 import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
-import { BroadcastService } from '../src/service/broadcastService';
 import { RedisOptions } from '../src/model/redisOptions';
 import { DockerService } from '../src/service/dockerService';
 import { CheckServices } from '../src/task/checkServices';
@@ -15,6 +14,7 @@ import { LmdbService } from '../src/service/lmdbService';
 import { CheckLocalDns } from '../src/task/checkLocalDns';
 import chaiSpy from 'chai-spies';
 import { ConfigWatch } from 'rest.portal/model/config';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 
 
 chai.use(chaiHttp);

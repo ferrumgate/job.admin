@@ -1,6 +1,6 @@
 {
   "name": "job.admin",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "manages machine network",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "url": "git+ssh://git@gitlab.com/ferrumgate/job.admin.git"
   },
   "publishConfig": {
-    "tag": "rest.portal@1.4.0"
+    "tag": "rest.portal@1.5.0"
   },
   "author": "",
   "license": "ISC",
@@ -25,17 +25,25 @@
   },
   "homepage": "https://gitlab.com/ferrumgate/job.admin#readme",
   "dependencies": {
+    "decompress": "^4.2.1",
+    "decompress-targz": "^4.1.1",
+    "highwayhash": "^3.1.1",
     "ioredis": "^5.2.4",
     "lmdb": "2.7.3",
     "log4js": "^6.7.1",
+    "md5-file": "^5.0.0",
+    "merge-files": "^0.1.2",
     "moment-timezone": "^0.5.41",
+    "n-readlines": "^1.0.1",
     "node-cache": "^5.1.2",
+    "recursive-readdir": "^2.2.3",
     "rest.portal": "file:../rest.portal/build/src",
     "set-interval-async": "^3.0.2"
   },
   "devDependencies": {
     "@types/chai": "^4.3.4",
     "@types/chai-spies": "^1.0.3",
+    "@types/decompress": "^4.2.4",
     "@types/ioredis": "^4.28.10",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.18",

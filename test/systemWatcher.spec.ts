@@ -11,9 +11,9 @@ import { IAmAlive } from '../src/task/iAmAlive';
 import { RedisConfigWatchService, RedisService, SystemLogService, Tunnel, TunnelService, Util } from 'rest.portal';
 import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
-import { BroadcastService } from '../src/service/broadcastService';
 import { SystemWatcherTask } from '../src/task/systemWatcherTask';
 import { DhcpService } from 'rest.portal/service/dhcpService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 
 
 chai.use(chaiHttp);

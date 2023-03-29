@@ -1,9 +1,8 @@
 
-import { InputService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
+import { ESService, ESServiceExtended, InputService, IpIntelligenceService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
-import { BroadcastService } from "./service/broadcastService";
 import { DockerService } from "./service/dockerService";
 import { NetworkService } from "./service/networkService";
 import { SystemWatcherTask } from "./task/systemWatcherTask";
@@ -20,6 +19,8 @@ import fs from 'fs';
 import { DhcpService } from "rest.portal/service/dhcpService";
 import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
 import { CheckLocalDns } from "./task/checkLocalDns";
+import { BroadcastService } from "rest.portal/service/broadcastService";
+
 
 
 
@@ -46,8 +47,11 @@ async function main() {
     const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin');
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
-    const policyService = new PolicyService(redisConfig);
     const bcastService = new BroadcastService();
+    const esService = new ESServiceExtended(redisConfig);
+    const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), esService);
+    const policyService = new PolicyService(redisConfig, ipIntelligenceService);
+
     const dockerService = new DockerService();
 
     const inputService = new InputService();

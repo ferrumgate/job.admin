@@ -5,8 +5,8 @@ import { GatewayBasedTask } from "./gatewayBasedTask";
 
 import { HelperService, logger, RedisService, Tunnel } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
-import { BroadcastService } from "../service/broadcastService";
 import { TunService } from "../service/tunService";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 
 
 /**
