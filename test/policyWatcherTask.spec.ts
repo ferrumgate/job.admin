@@ -165,7 +165,7 @@ describe('policyWatcherTask', () => {
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
 
 
-        await Util.sleep(3000);
+        await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
         await redisConfig.saveGateway(gateway);
         await redisConfig.saveService(service1);
@@ -212,7 +212,7 @@ describe('policyWatcherTask', () => {
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
 
 
-        await Util.sleep(3000);
+        await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
         await redisConfig.saveGateway(gateway);
         await redisConfig.saveService(service1);
@@ -274,7 +274,7 @@ describe('policyWatcherTask', () => {
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
 
 
-        await Util.sleep(3000);
+        await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
         await redisConfig.saveGateway(gateway);
         await redisConfig.saveService(service1);
@@ -318,7 +318,7 @@ describe('policyWatcherTask', () => {
         const redisConfig = new RedisConfigService(new RedisService(), new RedisService(),
             systemLog, encKey, filename);
         await redisConfig.start();
-        await Util.sleep(3000);
+        await Util.sleep(5000);
         const { network, gateway, service1,
             service2, user1, rule1,
             tunnel1, tunnel2 } = await createSampleData();
@@ -346,7 +346,7 @@ describe('policyWatcherTask', () => {
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
 
 
-        await Util.sleep(3000);
+        await Util.sleep(5000);
 
         //tunnel confirm
         bcastService.emit('tunnelConfirm', tunnel1);
