@@ -1,5 +1,5 @@
 
-import { ESService, ESServiceExtended, InputService, IpIntelligenceService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
+import { ConfigService, DeviceService, ESService, ESServiceExtended, InputService, IpIntelligenceService, RedisConfigService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
 import { PolicyService, SystemLogService } from "rest.portal";
 import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
 import { RedisOptions } from "./model/redisOptions";
@@ -51,6 +51,7 @@ async function main() {
     const esService = new ESServiceExtended(redisConfig);
     const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), esService);
     const policyService = new PolicyService(redisConfig, ipIntelligenceService);
+    const deviceService = new DeviceService(redisConfig, redis, esService);
 
     const dockerService = new DockerService();
 
@@ -101,7 +102,7 @@ async function main() {
 
     //check policy authentication
     const checkTunVSPolicyAuthn = new CheckTunDevicesPolicyAuthn(redis, bcastService,
-        redisConfig, tunnelService, sessionService, policyService);
+        redisConfig, tunnelService, sessionService, policyService, deviceService);
     await checkTunVSPolicyAuthn.start();
 
 
