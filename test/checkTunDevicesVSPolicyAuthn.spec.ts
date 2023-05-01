@@ -12,7 +12,7 @@ import fs from 'fs';
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
 import { NetworkService } from '../src/service/networkService';
 import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
-import { ESService, Gateway, InputService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, User, Util } from 'rest.portal';
+import { DeviceService, ESService, Gateway, InputService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, User, Util } from 'rest.portal';
 import { CheckTunDevicesPolicyAuthn } from '../src/task/checkTunDevicesVSPolicyAuthn';
 import { DhcpService } from 'rest.portal/service/dhcpService';
 import { exec } from 'child_process';
@@ -42,6 +42,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
     const sessionService = new SessionService(redisConfig, redis);
     const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
     const policyService = new PolicyService(redisConfig, ipIntelligenceService);
+    const deviceService = new DeviceService(redisConfig, redis, new ESService(redisConfig));
     const bcastService = new BroadcastService();
     before(async () => {
         await configService.start();
@@ -75,7 +76,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         })
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
         await checker.check();
         expect(spy).to.have.been.called;
@@ -99,7 +100,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
             return undefined;
         })
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
         await checker.check();
         expect(spy1).to.have.been.called;
@@ -130,7 +131,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
 
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         await redis.set('/gateway/test/tun/ferrumtun', 'atunnelkey');
@@ -170,7 +171,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
 
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         await redis.set('/gateway/test/tun/ferrumtun', 'atunnelkey');
@@ -211,7 +212,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
 
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         await redis.set('/gateway/test/tun/ferrumtun', 'atunnelkey');
@@ -258,7 +259,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
 
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         await redis.set('/gateway/test/tun/ferrumtun', 'atunnelkey');
@@ -312,7 +313,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
 
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         await redis.set('/gateway/test/tun/ferrumtun', 'atunnelkey');
@@ -332,7 +333,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
     it('check with tun device with tunnel with session with user and will not authenticate', async () => {
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
-            tunnelService, sessionService, policyService);
+            tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
 
         const spy1 = chai.spy.on(checker, 'check', async () => {

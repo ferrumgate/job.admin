@@ -1,7 +1,7 @@
 
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import { NetworkService } from "../service/networkService";
-import { ConfigService, logger, PolicyService, RedisService, SessionService, TunnelService } from "rest.portal";
+import { ConfigService, DeviceService, logger, PolicyService, RedisService, SessionService, TunnelService } from "rest.portal";
 import { RedisOptions } from "../model/redisOptions";
 import { TunService } from "../service/tunService";
 import { ConfigWatch } from "rest.portal/model/config";
@@ -23,7 +23,7 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
         stdTTL: 5 * 60, useClones: false, checkperiod: 10 * 60
     })
     constructor(protected redis: RedisService, protected bcastEvents: BroadcastService, protected configService: ConfigService, protected tunnelService: TunnelService,
-        protected sessionService: SessionService, protected policyService: PolicyService) {
+        protected sessionService: SessionService, protected policyService: PolicyService, protected deviceService: DeviceService) {
         super();
     }
 
@@ -80,8 +80,11 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
 
 
                         try {
-                            const result = await this.policyService.authenticate(user, session, tunnel);
-                            logger.info(`device ${device} policy authentication is ok on gateway ${this.gatewayId}`)
+                            const devicePosture = await this.deviceService.getDevicePosture(session.deviceId || '');
+                            logger.debug(`device posture ${JSON.stringify(devicePosture)}`)
+                            //logger.debug(`device postures ${JSON.stringify(await this.configService.getDevicePosturesAll())}`)
+                            const result = await this.policyService.authenticate(user, session, tunnel, devicePosture);
+                            logger.info(`device ${device} policy authentication is ok on gateway ${this.gatewayId} result is ${JSON.stringify(result)}`)
                         } catch (ignore: any) {
                             if (this.policyService.errorNumber) {
                                 logger.warn(`deleting device ${device} policy not valid on gateway ${this.gatewayId}`);
