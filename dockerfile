@@ -4,6 +4,8 @@ RUN apt update &&\
     iputils-ping net-tools ipvsadm dnsutils iperf3 \
     ca-certificates gnupg curl tcpdump procps conntrack lsb-release
 RUN sed -i 's/providers = provider_sect/#providers = provider_sect/g' /etc/ssl/openssl.cnf
+RUN sed -i 's/^MinProtocol.*/MinProtocol = TLSv1/g' /etc/ssl/openssl.cnf
+RUN sed -i 's/^CipherString.*/CipherString = DEFAULT:@SECLEVEL=1/g' /etc/ssl/openssl.cnf
 #RUN  apt install --assume-yes --no-install-recommends podman fuse-overlayfs
 RUN mkdir -p /etc/apt/keyrings
 RUN curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
