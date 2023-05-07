@@ -2,7 +2,7 @@ import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
 
 export interface Pod {
-    id: string, image: string, name: string; details?: any;
+    id: string, image: string, name: string; details?: any; svc?: { id: string, port: number, isTcp: boolean, isUdp: boolean, replica: number, lastUpdate: string }
 }
 /**
  * @summary docker management
@@ -14,14 +14,14 @@ export class DockerService {
         return str.replace(/[^a-z0-9]/gi, '');
     }
 
-    getEnv(svc: Service, rootFqdn: string) {
+    getEnv(svc: Service, port: number, isTcp?: boolean, isUdp?: boolean, rootFqdn?: string) {
 
 
-        let tcp = svc.tcp ? `-e RAW_DESTINATION_TCP_PORT=${svc.tcp}` : '';
-        let udp = svc.udp ? `-e RAW_DESTINATION_UDP_PORT=${svc.udp}` : '';
+        let tcp = isTcp ? `-e RAW_DESTINATION_TCP_PORT=${port}` : '';
+        let udp = isUdp ? `-e RAW_DESTINATION_UDP_PORT=${port}` : '';
 
-        let tcp_listen = svc.tcp ? `-e RAW_LISTEN_TCP_PORT=${svc.tcp}` : '';
-        let udp_listen = svc.udp ? `-e RAW_LISTEN_UDP_PORT=${svc.udp}` : '';
+        let tcp_listen = isTcp ? `-e RAW_LISTEN_TCP_PORT=${port}` : '';
+        let udp_listen = isUdp ? `-e RAW_LISTEN_UDP_PORT=${port}` : '';
         let redis_pass = process.env.REDIS_PASS ? `-e REDIS_PASS=${process.env.REDIS_PASS}` : ''
 
 
@@ -30,7 +30,7 @@ export class DockerService {
 -e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'localhost:9292'}
 -e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'} 
 ${redis_pass}
--e RAW_DESTINATION_HOST=${svc.host}
+-e RAW_DESTINATION_HOST=${svc.hosts[0].host}
 ${tcp} ${udp}
 -e RAW_LISTEN_IP=${svc.assignedIp}
 -e PROTOCOL_TYPE=${svc.protocol || 'raw'}
@@ -60,26 +60,28 @@ ${tcp_listen} ${udp_listen}
         if (svc.assignedIp != '127.0.0.1')
             await NetworkService.ipAddr('lo', svc.assignedIp);
     }
-    getLabels(svc: Service) {
-        return `--label Ferrum_Svc_LastUpdate=${svc.updateDate || ''} --label Ferrum_Svc_Id=${svc.id}`
+    getLabels(svc: Service, port: number, isTcp?: boolean, isUdp?: boolean, replicaNumber?: number) {
+        return `--label Ferrum_Svc_LastUpdate=${svc.updateDate || ''} --label Ferrum_Svc_Id=${svc.id} --label Ferrum_Svc_Port=${port} --label Ferrum_Svc_IsTcp=${isTcp ? 'true' : 'false'} --label Ferrum_Svc_IsUdp=${isUdp ? 'true' : 'false'} --label Ferrum_Svc_Replica=${replicaNumber || 0}`
     }
-    async run(svc: Service, gatewayId: string, network: string, rootFqdn: string) {
+    async run(svc: Service, gatewayId: string, network: string, rootFqdn: string, port: number, isTcp?: boolean, isUdp?: boolean, replica?: number) {
         logger.info(`starting ferrum service ${svc.name}`)
         let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:${process.env.LMDB_FOLDER || '/var/lib/ferrumgate'} --volume /dev/urandom:/dev/urandom`
         let net = network ? `--net=${network}` : '';
         let pid = network ? `--pid=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
+
         let command = `
 docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${pid} ${volume} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
-${this.getLabels(svc)} 
--d ${this.getEnv(svc, rootFqdn)}
+${this.getLabels(svc, port, isTcp, isUdp, replica)} 
+-d ${this.getEnv(svc, port, isTcp, isUdp, rootFqdn)}
 ${this.getGatewayServiceInstanceId(gatewayId, svc)}
 ${image}`
         command = command.replace(/\n/g, ' ');
 
         logger.debug(command);
         await this.execute(command);
+
         return command;
     }
     async inspect(podId: string | string[]) {
@@ -117,10 +119,21 @@ ${image}`
         podDetails.forEach(x => {
             if (x.Id) {
                 let finded = pods.find(y => y.id == x.Id)
-                if (finded)
+                if (finded) {
                     finded.details = x;
+                    const serviceId = x.Config?.Labels.Ferrum_Svc_Id;
+                    const lastUpdate = x.Config?.Labels.Ferrum_Svc_LastUpdate;
+                    const port = Number(x.Config?.Labels.Ferrum_Svc_Port) || 0;
+                    const isTcp = x.Config?.Labels.Ferrum_Svc_IsTcp == 'true' ? true : false;
+                    const isUdp = x.Config?.Labels.Ferrum_Svc_IsUdp == 'true' ? true : false;
+                    const replica = Number(x.Config?.Labels.Ferrum_Svc_Replica) || 0;
+                    finded.svc = { id: serviceId, port: port, isTcp: isTcp, isUdp: isUdp, replica: replica, lastUpdate: lastUpdate };
+
+                }
             }
         })
+
+
 
         return pods;
 

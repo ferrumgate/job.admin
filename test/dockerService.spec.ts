@@ -43,9 +43,10 @@ describe('dockerService', () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+            hosts: [{ host: '1.2.3.4' }],
             networkId: 'abcd',
-            tcp: 3306, assignedIp: '127.0.0.1',
+            ports: [{ port: 3306, isTcp: true }],
+            assignedIp: '127.0.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1
@@ -57,7 +58,8 @@ describe('dockerService', () => {
         await stopAllContaineers();
         let svc = createSampleData();
         const docker = new DockerService();
-        const result = docker.getEnv(svc, 'ferrumgate.zero');
+        const port = svc.ports[0];
+        const result = docker.getEnv(svc, port.port, port.isTcp, port.isUdp, 'ferrumgate.zero');
         expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e PROTOCOL_TYPE=raw -e SYSLOG_HOST=log:9292 -e POLICY_DB_FOLDER=/tmp/abc -e DNS_DB_FOLDER=/var/lib/ferrumgate/dns -e ROOT_FQDN=ferrumgate.zero -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
@@ -66,8 +68,12 @@ describe('dockerService', () => {
         await stopAllContaineers();
         let svc = createSampleData();
         const docker = new DockerService();
-        const result = docker.getLabels(svc);
+        const port = svc.ports[0];
+        const result = docker.getLabels(svc, port.port, port.isTcp, port.isUdp, 0);
         expect(result.trim()).to.includes('--label Ferrum_Svc_LastUpdate');
+        expect(result.trim()).to.includes('--label Ferrum_Svc_IsTcp');
+        expect(result.trim()).to.includes('--label Ferrum_Svc_IsUdp');
+        expect(result.trim()).to.includes('--label Ferrum_Svc_Replica');
 
     }).timeout(1000)
 
@@ -89,7 +95,8 @@ describe('dockerService', () => {
             }
         }
         const docker = new Mock33();
-        const result = await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero');
+        const port = svc.ports[0];
+        const result = await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
         expect(docker.ip).to.equal('an ip');
         expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  ferrumgate-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
 
@@ -198,8 +205,9 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
         }
         const svc = createSampleData();
         const docker = new Mock();
-        process.env.FERRUM_IMAGE = 'nginx'
-        await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero');
+        process.env.FERRUM_IMAGE = 'nginx';
+        const port = svc.ports[0];
+        await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
         delete process.env.FERRUM_IMAGE;
         const pods = await docker.getAllRunning();
         const pod = pods.find(x => x.name.includes('ferrumgate-svc'));

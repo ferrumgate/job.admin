@@ -72,9 +72,10 @@ describe('checkLocalDns', () => {
             name: 'mysql-dev',
             isEnabled: true,
             labels: [],
-            host: '1.2.3.4',
+            hosts: [{ host: '1.2.3.4' }],
             networkId: network.id,
-            tcp: 3306, assignedIp: '192.168.0.1',
+            ports: [{ port: 3306, isTcp: true }],
+            assignedIp: '192.168.0.1',
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1
