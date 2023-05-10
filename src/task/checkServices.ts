@@ -93,51 +93,78 @@ export class CheckServices extends GatewayBasedTask {
     }
     async compare(running: Pod[], services: Service[], rootFqdn: string) {
         await this.readGatewayId();
-        let restartList = [];
+        //normalize service data
+        services.forEach(x => {
+            x.ports.forEach(y => {
+                y.isTcp = y.isTcp ? true : false;
+                y.isUdp = y.isUdp ? true : false;
+            })
+        })
+        let stopedList = [];
         for (const run of running.filter(x => x.name.startsWith('ferrumgate-svc'))) {//check running services that must stop
 
             const serviceId = run.name.replace('ferrumgate-svc', '').split('-')[2];
             if (serviceId) {
                 const service = services.find(x => x.id == serviceId)
-                const lastUpdate = run.details?.Config?.Labels.Ferrum_Svc_LastUpdate;
-                if (!service || !service.isEnabled) {
-                    logger.warn(`closing pod ${run.name} status: ${service?.isEnabled} update:${service?.updateDate}`);
+                const svc = run.svc;
+                if (!svc || !service || !service.isEnabled) {
+                    logger.warn(`closing pod ${run.name} status: ${service?.isEnabled} update:${service?.updateDate} data: ${JSON.stringify(run.svc)} `);
                     try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                    stopedList.push(run);
+
 
                 } else
-                    if (service.updateDate != lastUpdate) {
-                        logger.warn(`closing pod ${run.name} restart needs, status: ${service?.isEnabled} update:${service?.updateDate}!=${lastUpdate}`);
+                    if (service.updateDate != svc.lastUpdate) {
+                        logger.warn(`closing pod ${run.name} restart needs, update:${service?.updateDate}!=${svc.lastUpdate}`);
                         try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
-                        restartList.push(service);
+                        stopedList.push(run);
+
+                    }
+                    else {
+
+                        const findedPort = service.ports.find(x => x.port == svc.port && x.isTcp == svc.isTcp && x.isUdp == svc.isUdp)
+                        if (!findedPort) {
+                            logger.warn(`closing pod ${run.name} port not found, data: ${JSON.stringify(run.svc)}`);
+                            try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                            stopedList.push(run);
+                        } else {
+                            if (service.count <= svc?.replica) {
+                                logger.warn(`closing pod ${run.name} replica not found, count: ${service?.count} data: ${JSON.stringify(run.svc)}`);
+                                try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                                stopedList.push(run);
+                            }
+                        }
 
                     }
             }
 
         }
+        //remove stopedlist
+        stopedList.forEach(x => {
+            let index = running.findIndex(y => y == x);
+            if (index >= 0)
+                running.splice(index, 1);
+        })
         const secureserver = running.find(x => x.image.includes('secure.server') || x.name.includes('secure.server'));
         if (!secureserver) {
             throw new Error(`secure server pod not running`);
         }
         for (const svc of services.filter(x => x.isEnabled)) {
-            const run = running.find(x => x.name.startsWith('ferrumgate-svc') && x.name.includes(`-${svc.id}-`))
-            if (!run) {//not running 
-                logger.info(`not running service found ${svc.name}`);
-                try {
-                    await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`, rootFqdn);
-                } catch (ignore: any) {
-                    logger.error(ignore);
+            for (const port of svc.ports) {
+                for (let replica = 0; replica < svc.count; ++replica) {
+                    const run = running.filter(x => x.name.startsWith('ferrumgate-svc')).find(x => x.svc?.id == svc.id && x.svc.port == port.port && x.svc.isTcp == port.isTcp && x.svc.isUdp == port.isUdp && x.svc.replica == replica)
+                    if (!run) {//not running 
+                        logger.info(`not running service found ${svc.name} port:${JSON.stringify(port)} replica:${replica}`);
+                        try {
+                            await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`, rootFqdn, port.port, port.isTcp, port.isUdp);
+                        } catch (ignore: any) {
+                            logger.error(ignore);
+                        }
+                    }
                 }
             }
         }
-        for (const svc of restartList) {
-            logger.info(`restart service found ${svc.name}`);
-            try {
-                await this.dockerService.run(svc, this.gatewayId, `container:${secureserver.id}`, rootFqdn);
-            } catch (ignore: any) {
-                logger.error(ignore);
-            }
 
-        }
 
 
     }

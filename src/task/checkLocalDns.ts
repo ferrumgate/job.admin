@@ -77,7 +77,7 @@ export class CheckLocalDns {
             await this.lmdbService.batch(async () => {
                 await this.lmdbService.clear();
                 for (const dns of dnsRecords) {
-                    if (dns) {
+                    if (dns && dns.fqdn && dns.ipv4) {
                         const key = `/local/dns/${dns.fqdn}/a`;
                         const val = dns.ipv4;
                         await this.lmdbService.put(key, val);
@@ -88,11 +88,11 @@ export class CheckLocalDns {
             })
             // write more log
             for (const dns of dnsRecords) {
-                if (dns) {
+                if (dns && dns.fqdn) {
                     const key = `/local/dns/${dns.fqdn}/a`;
                     const val = dns.ipv4;
                     const result = await this.lmdbService.get(key);//check again
-                    logger.info(`write local dns ${key} -> ${result}`);
+                    logger.info(`read local dns ${key} -> ${result}`);
 
                 }
             }
