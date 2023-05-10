@@ -36,15 +36,16 @@ async function main() {
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
     const encryptKey = process.env.ENCRYPT_KEY || Util.randomNumberString(32);
+    const gatewayId = process.env.GATEWAY_ID || Util.randomNumberString(16);
 
     const redisOptions: RedisOptions = { host: redisHost, password: redisPassword };
 
 
     const redis = createRedis(redisOptions);
 
-    const systemLog = new SystemLogService(redis, createRedis(redisOptions), encryptKey, 'job.admin');
+    const systemLog = new SystemLogService(redis, createRedis(redisOptions), encryptKey, 'job.admin/' + gatewayId);
 
-    const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin');
+    const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin/' + gatewayId);
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
     const bcastService = new BroadcastService();
