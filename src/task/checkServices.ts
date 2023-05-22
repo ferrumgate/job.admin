@@ -35,9 +35,9 @@ export class CheckServices extends GatewayBasedTask {
     }
 
     public async closeAllServices() {
-        const services = await this.dockerService.getAllRunning();
+        const services = await this.dockerService.getAllRunning(this.gatewayId);
         for (const svc of services) {
-            if (svc.name.startsWith('ferrumgate-svc'))
+            if (svc.name.startsWith(`fg-${this.gatewayId}-svc`))
                 await this.dockerService.stop(svc)
         }
     }
@@ -83,7 +83,7 @@ export class CheckServices extends GatewayBasedTask {
 
             const services = await this.configService.getServicesByNetworkId(network.id);
             const rootFqdn = await this.configService.getDomain();
-            const running = await this.dockerService.getAllRunning();
+            const running = await this.dockerService.getAllRunning(this.gatewayId);
 
             await this.compare(running, services, rootFqdn);
 
@@ -101,9 +101,10 @@ export class CheckServices extends GatewayBasedTask {
             })
         })
         let stopedList = [];
-        for (const run of running.filter(x => x.name.startsWith('ferrumgate-svc'))) {//check running services that must stop
+        const svcname = `fg-${this.gatewayId}-svc`;
+        for (const run of running.filter(x => x.name.startsWith(svcname))) {//check running services that must stop
 
-            const serviceId = run.name.replace('ferrumgate-svc', '').split('-')[2];
+            const serviceId = run.name.replace(svcname, '').split('-')[2];
             if (serviceId) {
                 const service = services.find(x => x.id == serviceId)
                 const svc = run.svc;
@@ -152,7 +153,7 @@ export class CheckServices extends GatewayBasedTask {
         for (const svc of services.filter(x => x.isEnabled)) {
             for (const port of svc.ports) {
                 for (let replica = 0; replica < svc.count; ++replica) {
-                    const run = running.filter(x => x.name.startsWith('ferrumgate-svc')).find(x => x.svc?.id == svc.id && x.svc.port == port.port && x.svc.isTcp == port.isTcp && x.svc.isUdp == port.isUdp && x.svc.replica == replica)
+                    const run = running.filter(x => x.name.startsWith(svcname)).find(x => x.svc?.id == svc.id && x.svc.port == port.port && x.svc.isTcp == port.isTcp && x.svc.isUdp == port.isUdp && x.svc.replica == replica)
                     if (!run) {//not running 
                         logger.info(`not running service found ${svc.name} port:${JSON.stringify(port)} replica:${replica}`);
                         try {
