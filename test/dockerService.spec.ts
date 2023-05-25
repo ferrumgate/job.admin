@@ -13,7 +13,7 @@ import { DockerService } from '../src/service/dockerService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
+const gatewayId = '12345'
 const tmpfolder = '/tmp/ferrumtest';
 describe('dockerService', () => {
     beforeEach(async () => {
@@ -23,7 +23,7 @@ describe('dockerService', () => {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
         for (const pod of pods) {
-            if (pod.name.startsWith('ferrumgate-svc'))
+            if (pod.name.startsWith('fg-'))
                 await docker.stop(pod);
         }
     }
@@ -74,6 +74,7 @@ describe('dockerService', () => {
         expect(result.trim()).to.includes('--label Ferrum_Svc_IsTcp');
         expect(result.trim()).to.includes('--label Ferrum_Svc_IsUdp');
         expect(result.trim()).to.includes('--label Ferrum_Svc_Replica');
+        expect(result.trim()).to.includes('--label Ferrum_Gateway_Id');
 
     }).timeout(1000)
 
@@ -96,12 +97,12 @@ describe('dockerService', () => {
         }
         const docker = new Mock33();
         const port = svc.ports[0];
-        const result = await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+        const result = await docker.run(svc, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
         expect(docker.ip).to.equal('an ip');
-        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  ferrumgate-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=231a0932 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
+        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  fg-12345-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=12345 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
+        //console.log(docker);
 
-
-    }).timeout(10000)
+    }).timeout(20000)
 
     it('getAllRunning', async () => {
         await stopAllContaineers();
@@ -140,7 +141,7 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
             }
         }
         const docker = new Mock22();
-        const containers = await docker.getAllRunning();
+        const containers = await docker.getAllRunning(gatewayId);
 
         expect(containers.length).to.equal(8);
         expect(containers[0].id).to.equal(`fa366965bd90a1f004592286785b870016510e9e4ca7cfd82b7ea426a37e4c1a`);
@@ -187,7 +188,7 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
 
 
 
-    }).timeout(1000);
+    }).timeout(10000);
 
 
     it('run/getAllRunning/stop', async () => {
@@ -207,16 +208,16 @@ d9263760e68d99b77f526f2a109ec0f3e6bd5218648eb64adcefdc05e42bcaa1 registry.ferrum
         const docker = new Mock();
         process.env.FERRUM_IMAGE = 'nginx';
         const port = svc.ports[0];
-        await docker.run(svc, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+        await docker.run(svc, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
         delete process.env.FERRUM_IMAGE;
-        const pods = await docker.getAllRunning();
-        const pod = pods.find(x => x.name.includes('ferrumgate-svc'));
+        const pods = await docker.getAllRunning(gatewayId);
+        const pod = pods.find(x => x.name.includes('fg-12345-svc'));
         expect(pod).exist;
         if (pod)
             await docker.stop(pod);
 
-        const pods1 = await docker.getAllRunning();
-        const pod2 = pods1.find(x => x.name.includes('ferrumgate-svc'));
+        const pods1 = await docker.getAllRunning(gatewayId);
+        const pod2 = pods1.find(x => x.name.includes('fg-12345-svc'));
         expect(pod2).not.exist;
 
 

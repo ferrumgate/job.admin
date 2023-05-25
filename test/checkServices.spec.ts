@@ -2,7 +2,7 @@
 //docker run --net=host --name redis --rm -d redis
 
 
-import chai from 'chai';
+import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
 import { RedisService, SystemLogService } from 'rest.portal';
 import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
@@ -16,7 +16,7 @@ import { BroadcastService } from 'rest.portal/service/broadcastService';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
-
+const gatewayId = '12345';
 const tmpfolder = '/tmp/ferrumtest';
 describe('checkServices', () => {
     const simpleRedis = new RedisService();
@@ -35,7 +35,7 @@ describe('checkServices', () => {
         const docker = new DockerService();
         const pods = await docker.getAllRunning();
         for (const pod of pods) {
-            if (pod.name.startsWith('ferrumgate-svc'))
+            if (pod.name.startsWith(`fg-`))
                 await docker.stop(pod);
         }
     }
@@ -56,7 +56,7 @@ describe('checkServices', () => {
 
 
         let gateway: Gateway = {
-            id: '231a0932',
+            id: gatewayId,
             name: 'myserver',
             labels: [],
             isEnabled: true,
@@ -97,160 +97,110 @@ describe('checkServices', () => {
         }
     }
 
-    /*   it('closeAllServices', async () => {
-          await closeAllServices();
-          const { gateway, network, service } = await createSampleData();
-          const docker = new DockerService();
-  
-          const checkservices = new CheckServices(new MockConfig(), new BroadcastService(), docker);
-          checkservices.setGatewayId('231a0932');
-          const port = service.ports[0];
-          await docker.run(service, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
-          await checkservices.closeAllServices();
-          const pods = await docker.getAllRunning();
-          expect(pods.find(x => x.name.includes('ferrumgate-svc'))).to.be.undefined;
-  
-      }).timeout(30000)
-  
-      it('checkServices', async () => {
-          await closeAllServices();
-          const { gateway, network, service } = await createSampleData();
-          const docker = new DockerService();
-  
-          const config = new MockConfig();
-          const checkservices = new CheckServices(config, new BroadcastService(), docker);
-          checkservices.setGatewayId('231a0932');
-          let closeAllCalled = false;
-          const realcloseAllServices = checkservices.closeAllServices;
-  
-          checkservices.closeAllServices = async () => {
-              closeAllCalled = true;
-              await realcloseAllServices.bind(checkservices)()
-          }
-          //no gateway
-          closeAllCalled = false;
-          config.getGateway = async () => {
-              return undefined;
-          }
-  
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.true;
-  
-          // gateway is disabled
-          closeAllCalled = false;
-          gateway.isEnabled = false;
-          config.getGateway = async () => {
-              return gateway;
-          }
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.true;
-  
-          gateway.isEnabled = true;
-  
-          //no network
-          closeAllCalled = false;
-          const realgetNetworkByGatewayId = config.getNetworkByGateway;
-          config.getNetworkByGateway = async () => {
-              return null;
-          }
-  
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.true;
-  
-  
-          //network disabled
-          closeAllCalled = false;
-          network.isEnabled = false;
-          config.getNetworkByGateway = async () => {
-              return network;
-          }
-  
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.true;
-  
-          network.isEnabled = true;
-          //network service network problem
-          closeAllCalled = false;
-          network.serviceNetwork = '';
-  
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.true;
-  
-  
-          //evertytin normal check if compare called
-          network.serviceNetwork = '1.2.3.4'
-          closeAllCalled = false;
-          config.getServicesByNetworkId = async () => {
-              return [service];
-          }
-  
-          let compareCalled = false;
-  
-          checkservices.compare = async () => {
-              compareCalled = true;
-          }
-  
-          await checkservices.checkServices();
-          expect(closeAllCalled).to.be.false;
-  
-  
-  
-      }).timeout(30000)
-  
-  
-      it('compare', async () => {
-          await closeAllServices();
-          const { gateway, network, service } = await createSampleData();
-          const docker = new DockerService();
-  
-  
-  
-          const config = new MockConfig();
-          const checkservices = new CheckServices(config, new BroadcastService(), docker);
-          checkservices.setGatewayId('231a0932');
-  
-          const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
-          const isWorking = Number(isWorkingStr);
-          if (isWorking) {
-              await Util.exec(`docker stop secure.server`);
-          }
-          await Util.exec(`docker run -d --rm --name secure.server -p 9393:80 nginx`);
-          //start 1 services
-          const port = service.ports[0];
-          await docker.run(service, 'abc', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
-  
-          const runnings = await docker.getAllRunning();
-          await checkservices.compare(runnings, [service], 'ferrumgate.zero');
-  
-          const runnings2 = await docker.getAllRunning();
-          expect(runnings2.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
-  
-          await checkservices.closeAllServices();
-          // start 2 services, 1 of them will be stoped
-          const service2 = JSON.parse(JSON.stringify(service));
-          service2.id = '15';
-          await Util.sleep(1000);
-          await docker.run(service, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
-          await docker.run(service2, '231a0932', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
-  
-          const runnings3 = await docker.getAllRunning();
-          await checkservices.compare(runnings3, [service], 'ferrumgate.zero');
-          await Util.sleep(1000);
-          const runnings4 = await docker.getAllRunning();
-          expect(runnings4.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
-  
-          await checkservices.closeAllServices();
-          await Util.sleep(1000);
-  
-          await checkservices.closeAllServices();
-  
-      }).timeout(1200000);
-   */
+    it('closeAllServices', async () => {
+        await closeAllServices();
+        const { gateway, network, service } = await createSampleData();
+        const docker = new DockerService();
+
+        const checkservices = new CheckServices(new MockConfig(), new BroadcastService(), docker);
+        checkservices.setGatewayId(gatewayId);
+        const port = service.ports[0];
+        await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+        await checkservices.closeAllServices();
+        const pods = await docker.getAllRunning(gatewayId);
+        expect(pods.find(x => x.name.includes(`fg-${gatewayId}-svc`))).to.be.undefined;
+
+    }).timeout(30000)
+
+    it('checkServices', async () => {
+        await closeAllServices();
+        const { gateway, network, service } = await createSampleData();
+        const docker = new DockerService();
+
+        const config = new MockConfig();
+        const checkservices = new CheckServices(config, new BroadcastService(), docker);
+        checkservices.setGatewayId(gatewayId);
+        let closeAllCalled = false;
+        const realcloseAllServices = checkservices.closeAllServices;
+
+        checkservices.closeAllServices = async () => {
+            closeAllCalled = true;
+            await realcloseAllServices.bind(checkservices)()
+        }
+        //no gateway
+        closeAllCalled = false;
+        config.getGateway = async () => {
+            return undefined;
+        }
+
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.true;
+
+        // gateway is disabled
+        closeAllCalled = false;
+        gateway.isEnabled = false;
+        config.getGateway = async () => {
+            return gateway;
+        }
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.true;
+
+        gateway.isEnabled = true;
+
+        //no network
+        closeAllCalled = false;
+        const realgetNetworkByGatewayId = config.getNetworkByGateway;
+        config.getNetworkByGateway = async () => {
+            return null;
+        }
+
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.true;
+
+
+        //network disabled
+        closeAllCalled = false;
+        network.isEnabled = false;
+        config.getNetworkByGateway = async () => {
+            return network;
+        }
+
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.true;
+
+        network.isEnabled = true;
+        //network service network problem
+        closeAllCalled = false;
+        network.serviceNetwork = '';
+
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.true;
+
+
+        //evertytin normal check if compare called
+        network.serviceNetwork = '1.2.3.4'
+        closeAllCalled = false;
+        config.getServicesByNetworkId = async () => {
+            return [service];
+        }
+
+        let compareCalled = false;
+
+        checkservices.compare = async () => {
+            compareCalled = true;
+        }
+
+        await checkservices.checkServices();
+        expect(closeAllCalled).to.be.false;
+
+
+
+    }).timeout(30000)
 
 
     it('compare', async () => {
@@ -262,14 +212,68 @@ describe('checkServices', () => {
 
         const config = new MockConfig();
         const checkservices = new CheckServices(config, new BroadcastService(), docker);
-        checkservices.setGatewayId('231a0932');
+        //const gatewayId = gatewayId;
+        checkservices.setGatewayId(gatewayId);
 
-        const isWorkingStr = await Util.exec(`docker ps|grep secure.server|wc -l`) as string;
+        const isWorkingStr = await Util.exec(`docker ps|grep fg-${gatewayId}-secure.server|wc -l`) as string;
         const isWorking = Number(isWorkingStr);
         if (isWorking) {
-            await Util.exec(`docker stop secure.server`);
+            await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
         }
-        await Util.exec(`docker run -d --rm --name secure.server -p 9393:80 nginx`);
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.sleep(1000);
+        //start 1 services
+        const port = service.ports[0];
+        await docker.run(service, 'abc', 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+
+        const runnings = await docker.getAllRunning(gatewayId);
+        await checkservices.compare(runnings, [service], 'ferrumgate.zero');
+
+        const runnings2 = await docker.getAllRunning(gatewayId);
+        expect(runnings2.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(1);
+
+        await checkservices.closeAllServices();
+        // start 2 services, 1 of them will be stoped
+        const service2 = JSON.parse(JSON.stringify(service));
+        service2.id = '15';
+        await Util.sleep(1000);
+        await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+        await docker.run(service2, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
+
+        const runnings3 = await docker.getAllRunning(gatewayId);
+        await checkservices.compare(runnings3, [service], 'ferrumgate.zero');
+        await Util.sleep(1000);
+        const runnings4 = await docker.getAllRunning(gatewayId);
+        expect(runnings4.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(1);
+
+        await checkservices.closeAllServices();
+        await Util.sleep(1000);
+
+        await checkservices.closeAllServices();
+
+    }).timeout(1200000);
+
+
+
+    it('compare', async () => {
+        await closeAllServices();
+        const { gateway, network, service } = await createSampleData();
+        const docker = new DockerService();
+
+
+
+        const config = new MockConfig();
+        const checkservices = new CheckServices(config, new BroadcastService(), docker);
+        //const gatewayId = gatewayId
+        checkservices.setGatewayId(gatewayId);
+
+        const isWorkingStr = await Util.exec(`docker ps|grep fg-${gatewayId}-secure.server|wc -l`) as string;
+        const isWorking = Number(isWorkingStr);
+        if (isWorking) {
+            await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
+        }
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.sleep(1000);
         //start 1 service with 4 ports
         service.ports.push({ port: 4000, isTcp: true, isUdp: true });
         service.ports.push({ port: 5000, isTcp: false, isUdp: true });
@@ -279,56 +283,56 @@ describe('checkServices', () => {
         const port2 = service.ports[1];
         const port3 = service.ports[1];
 
-        let runnings = await docker.getAllRunning();
+        let runnings = await docker.getAllRunning(gatewayId);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
 
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
 
         await checkservices.closeAllServices();
         // start 1 port previously
-        await docker.run(service, '231a0932', 'host', 'ferrumgate.zero', port0.port, port0.isTcp, port0.isUdp);
+        await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', port0.port, port0.isTcp, port0.isUdp);
 
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(1);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
 
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
 
         //service disabled scenario
 
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(0);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(0);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
 
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
         service.isEnabled = false;
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(0);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(0);
 
 
         // service enabled last update time changed
         service.isEnabled = true;
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
 
         service.updateDate = new Date().toISOString();
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
         await checkservices.closeAllServices();
         await Util.sleep(1000);
         ///
@@ -336,37 +340,37 @@ describe('checkServices', () => {
         // start a random port
 
         // start 1 port previously, then closed this one
-        await docker.run(service, '231a0932', 'host', 'ferrumgate.zero', 9020, port0.isTcp, port0.isUdp);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
+        await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', 9020, port0.isTcp, port0.isUdp);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(1);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
 
 
         // start 1 port previously, but there is no replica with this number 10
-        await docker.run(service, '231a0932', 'host', 'ferrumgate.zero', port0.port, port0.isTcp, port0.isUdp, 10);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(1);
+        await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', port0.port, port0.isTcp, port0.isUdp, 10);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(1);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(4);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
         // replica count 3
         service.count = 3;
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(0);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(0);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(1000);
-        runnings = await docker.getAllRunning();
-        expect(runnings.filter(x => x.name.includes('ferrumgate-svc')).length).to.equal(12);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(12);
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 

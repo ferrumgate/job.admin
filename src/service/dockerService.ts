@@ -2,7 +2,7 @@ import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
 
 export interface Pod {
-    id: string, image: string, name: string; details?: any; svc?: { id: string, port: number, isTcp: boolean, isUdp: boolean, replica: number, lastUpdate: string }
+    id: string, image: string, name: string; details?: any; svc?: { id: string, port: number, isTcp: boolean, isUdp: boolean, replica: number, lastUpdate: string, gatewayId: string }
 }
 /**
  * @summary docker management
@@ -60,20 +60,20 @@ ${tcp_listen} ${udp_listen}
         if (svc.assignedIp != '127.0.0.1')
             await NetworkService.ipAddr('lo', svc.assignedIp);
     }
-    getLabels(svc: Service, port: number, isTcp?: boolean, isUdp?: boolean, replicaNumber?: number) {
-        return `--label Ferrum_Svc_LastUpdate=${svc.updateDate || ''} --label Ferrum_Svc_Id=${svc.id} --label Ferrum_Svc_Port=${port} --label Ferrum_Svc_IsTcp=${isTcp ? 'true' : 'false'} --label Ferrum_Svc_IsUdp=${isUdp ? 'true' : 'false'} --label Ferrum_Svc_Replica=${replicaNumber || 0}`
+    getLabels(svc: Service, port: number, isTcp?: boolean, isUdp?: boolean, replicaNumber?: number, gatewayId?: string) {
+        return `--label Ferrum_Svc_LastUpdate=${svc.updateDate || ''} --label Ferrum_Svc_Id=${svc.id} --label Ferrum_Svc_Port=${port} --label Ferrum_Svc_IsTcp=${isTcp ? 'true' : 'false'} --label Ferrum_Svc_IsUdp=${isUdp ? 'true' : 'false'} --label Ferrum_Svc_Replica=${replicaNumber || 0} --label Ferrum_Gateway_Id=${gatewayId || 0}`
     }
     async run(svc: Service, gatewayId: string, network: string, rootFqdn: string, port: number, isTcp?: boolean, isUdp?: boolean, replica?: number) {
         logger.info(`starting ferrum service ${svc.name}`)
-        let volume = `--volume ${process.env.VOLUME_LMDB || 'ferrumgate_lmdb'}:${process.env.LMDB_FOLDER || '/var/lib/ferrumgate'} --volume /dev/urandom:/dev/urandom`
+        let volume = `--volume ${process.env.VOLUME_LMDB || 'fg-' + gatewayId + '_lmdb'}:${process.env.LMDB_FOLDER || '/var/lib/ferrumgate'} --volume /dev/urandom:/dev/urandom`
         let net = network ? `--net=${network}` : '';
         let pid = network ? `--pid=${network}` : '';
         await this.ipAddr(svc);
         let image = process.env.FERRUM_IO_IMAGE || 'ferrum.io';
 
         let command = `
-docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${pid} ${volume} --name  ferrumgate-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
-${this.getLabels(svc, port, isTcp, isUdp, replica)} 
+docker run --cap-add=NET_ADMIN --rm --restart=no ${net} ${pid} ${volume} --name  fg-${gatewayId}-svc-${this.normalizeName(svc.name).toLocaleLowerCase().substring(0, 6)}-${svc.id}-${Util.randomNumberString(6)}
+${this.getLabels(svc, port, isTcp, isUdp, replica, gatewayId)} 
 -d ${this.getEnv(svc, port, isTcp, isUdp, rootFqdn)}
 ${this.getGatewayServiceInstanceId(gatewayId, svc)}
 ${image}`
@@ -95,9 +95,9 @@ ${image}`
         return [];
     }
 
-    async getAllRunning(): Promise<Pod[]> {
+    async getAllRunning(gatewayId?: string): Promise<Pod[]> {
         logger.info(`get all running pods`);
-        const output = await this.execute(`docker ps --no-trunc  --filter status=running --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
+        const output = await this.execute(`docker ps --no-trunc  --filter status=running ${gatewayId ? '--filter label=Ferrum_Gateway_Id=' + gatewayId : ''} --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
         const rows = output.split('\n').map(x => x.trim()).filter(x => x);
         let pods = rows.map((x) => {
             const tmp = x.split(' ');
@@ -127,7 +127,8 @@ ${image}`
                     const isTcp = x.Config?.Labels.Ferrum_Svc_IsTcp == 'true' ? true : false;
                     const isUdp = x.Config?.Labels.Ferrum_Svc_IsUdp == 'true' ? true : false;
                     const replica = Number(x.Config?.Labels.Ferrum_Svc_Replica) || 0;
-                    finded.svc = { id: serviceId, port: port, isTcp: isTcp, isUdp: isUdp, replica: replica, lastUpdate: lastUpdate };
+                    const gatewayId = x.Config?.Labels.Ferrum_Gateway_Id;
+                    finded.svc = { id: serviceId, port: port, isTcp: isTcp, isUdp: isUdp, replica: replica, lastUpdate: lastUpdate, gatewayId: gatewayId };
 
                 }
             }
