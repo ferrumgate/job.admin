@@ -112,9 +112,9 @@ export class SystemWatcherTask extends GatewayBasedTask {
                 if (ev.path == '/system/tunnels/confirm') {
                     const data = ev.val as Tunnel;
                     if (data?.id) {
-                        this.tunnels.set(data.id, data, 5 * 60);
-                        if (data.gatewayId == this.gatewayId) {
 
+                        if (data.gatewayId == this.gatewayId) {
+                            this.tunnels.set(data.id, data, 5 * 60);
                             this.bcastService.emit('tunnelConfigure', data);
                             logger.info(`system watcher tunnel configure id:${data.id} trackId:${data.trackId}`)
                         }

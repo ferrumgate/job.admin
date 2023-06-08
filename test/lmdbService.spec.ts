@@ -148,6 +148,81 @@ describe('lmdbService', () => {
 
     }).timeout(10000);
 
+    it('range2', async () => {
+
+        const lmdb = await LmdbService.open('ferrum', tmpfolder);
+        await lmdb.put('/authorize/track/id/1/service/id/ad', 'hamza4');
+        await lmdb.put('/authorize/track/id/1/service/id/ae', 'hamza4');
+        await lmdb.put('/authorize/track/id/2/service/id/ef', 'hamza4');
+        await lmdb.put('/authorize/track/id/2/service/id/def', 'hamza4');
+        await lmdb.put('/authorize/abtrack/id/2/service/id/ef', 'hamza4');
+        await lmdb.put('/authorize/atrack/id/2/service/id/def', 'hamza4');
+        await lmdb.put('/authorize/track/id/3/service/id/ae', 'hamza4');
+        await lmdb.put('/authorize/track/id/10/service/id/aw', 'hamza4');
+        await lmdb.put('/authorize/track/id/10/service/id/ac', 'hamza4');
+        await lmdb.put('/authorize/track/id/11/service/id/bd', 'hamza4');
+        await lmdb.put('/authorize/track/id/100/service/id/bd', 'hamza4');
+        await lmdb.put('/authorize/track/id/101/service/id/bd', 'hamza4');
+        await lmdb.put('/authorize/track/id/101/service/id/be', 'hamza4');
+        await lmdb.put('/authorize/track/id/1000000/service/id/be', 'hamza4');
+        await lmdb.put('/auth/track/id/1000000/service/id/be', 'hamza4');
+        async function ran(i: number) {
+            const arr = new Uint8Array(255);
+            arr.fill(255, 0, 254);
+            const key = `/authorize/track/id/${i}/service/id/`;
+            Buffer.from(key).copy(arr, 0, 0, key.length);
+            const range = await lmdb.range({ start: key, end: arr });
+            return range;
+        }
+
+        const range1 = await (await ran(1)).asArray
+        expect(range1.length).to.equal(2);
+        expect(range1[0].key).to.equal('/authorize/track/id/1/service/id/ad')
+        expect(range1[1].key).to.equal('/authorize/track/id/1/service/id/ae')
+
+        const range10 = (await ran(10)).asArray;
+        expect(range10.length).to.equal(2);
+        expect(range10[0].key).to.equal('/authorize/track/id/10/service/id/ac')
+        expect(range10[1].key).to.equal('/authorize/track/id/10/service/id/aw')
+
+
+        const range100 = (await ran(100)).asArray;
+        expect(range100.length).to.equal(1);
+
+
+        async function ran2(i: number) {
+            const arr = new Uint8Array(255);
+            arr.fill(255, 0, 254);
+            const key = `/authorize/abtrack/id/${i}/service/id/`;
+            Buffer.from(key).copy(arr, 0, 0, key.length);
+            const range = await lmdb.range({ start: key, end: arr });
+            return range;
+        }
+
+        const range101 = (await ran2(2)).asArray;
+        expect(range101.length).to.equal(1);
+        expect(range101[0].key).to.equal('/authorize/abtrack/id/2/service/id/ef')
+
+        async function ran3(i: number) {
+            const arr = new Uint8Array(255);
+            arr.fill(255, 0, 254);
+            const key = `/authorize/`;
+            Buffer.from(key).copy(arr, 0, 0, key.length);
+            const range = await lmdb.range({ start: key, end: arr });
+            return range;
+        }
+        const range102 = (await ran3(2)).asArray;
+        expect(range102.length).to.equal(14);
+
+
+        await lmdb.close();
+
+
+
+    }).timeout(10000);
+
+
+
 
     it('get/put integration', async () => {
 
