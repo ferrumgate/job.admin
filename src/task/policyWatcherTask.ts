@@ -6,6 +6,7 @@ import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import fs from 'fs';
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import toml from 'toml';
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculates policy 
@@ -26,7 +27,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     }
     async start() {
 
-        this.lmdbService = await LmdbService.open('ferrumgate', this.dbFolder, 'string', 16);
+        this.lmdbService = await LmdbService.open('policy', this.dbFolder, 'string', 16);
         logger.info(`opening policy lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
@@ -140,8 +141,8 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             logger.info(`policy watcher config changed detected`);
             let removeLength = this.configChangedTimes.length;
             let removeKeys = new Map();
-            for (const iterator of this.tunnels) {
-                const range = await this.lmdbGetTunnel(iterator[1]);
+            for (const tun of this.tunnels.values()) {
+                const range = await this.lmdbGetTunnel(tun);
                 for (const it of range) {
                     removeKeys.set(it.key, 1);
                 }
@@ -207,9 +208,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         await this.lmdbService.put(this.createKey(tun, svc), this.createValue(tun, result, svc))
     }
     async lmdbGetTunnel(tun: Tunnel) {
+
+        const key = this.createKey(tun);
+        return await this.lmdbGetRange(key);
+    }
+    async lmdbGetRange(key: string) {
         const arr = new Uint8Array(255);
         arr.fill(255, 0, 254);
-        const key = this.createKey(tun);
         Buffer.from(key).copy(arr, 0, 0, key.length);
         const range = await this.lmdbService.range({ start: key, end: arr });
         return range;

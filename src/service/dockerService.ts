@@ -23,13 +23,16 @@ export class DockerService {
         let tcp_listen = isTcp ? `-e RAW_LISTEN_TCP_PORT=${port}` : '';
         let udp_listen = isUdp ? `-e RAW_LISTEN_UDP_PORT=${port}` : '';
         let redis_pass = process.env.REDIS_PASS ? `-e REDIS_PASS=${process.env.REDIS_PASS}` : ''
+        let redis_intel_pass = process.env.REDIS_INTEL_PASS ? `-e REDIS_INTEL_PASS=${process.env.REDIS_INTEL_PASS}` : ''
 
 
         let env = `
 -e LOG_LEVEL=${process.env.LOG_LEVEL || 'info'}
 -e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'localhost:9292'}
--e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'} 
+-e REDIS_HOST=${process.env.REDIS_HOST || 'localhost:6379'}
 ${redis_pass}
+-e REDIS_INTEL_HOST=${process.env.REDIS_INTEL_HOST || 'localhost:6379'}
+${redis_intel_pass}
 -e RAW_DESTINATION_HOST=${svc.hosts[0].host}
 ${tcp} ${udp}
 -e RAW_LISTEN_IP=${svc.assignedIp}

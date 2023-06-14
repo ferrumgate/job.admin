@@ -55,6 +55,38 @@ describe('lmdbService', () => {
 
     }).timeout(10000)
 
+
+    it('multio open read/clear', async () => {
+
+        const lmdb1 = await LmdbService.open('ferrum1', tmpfolder);
+        await lmdb1.put('/test', '1');
+        const lmdb2 = await LmdbService.open('ferrum2', tmpfolder);
+        await lmdb2.put('/test', '1');
+
+        const data1 = await lmdb1.get('/test')
+        expect(data1).to.equal('1');
+
+        const data2 = await lmdb2.get('/test')
+        expect(data2).to.equal('1');
+
+        await lmdb2.clear();
+
+
+        const data11 = await lmdb1.get('/test')
+        expect(data11).to.equal('1');
+
+        const data22 = await lmdb2.get('/test')
+        expect(data22).not.exist;
+
+
+
+
+
+
+
+    }).timeout(10000)
+
+
     it('get/put', async () => {
 
         const lmdb = await LmdbService.open('ferrum', tmpfolder);
@@ -151,6 +183,7 @@ describe('lmdbService', () => {
     it('range2', async () => {
 
         const lmdb = await LmdbService.open('ferrum', tmpfolder);
+        await lmdb.put('/dns/local/abc.service.com', '1.2.3');
         await lmdb.put('/authorize/track/id/1/service/id/ad', 'hamza4');
         await lmdb.put('/authorize/track/id/1/service/id/ae', 'hamza4');
         await lmdb.put('/authorize/track/id/2/service/id/ef', 'hamza4');
@@ -166,6 +199,8 @@ describe('lmdbService', () => {
         await lmdb.put('/authorize/track/id/101/service/id/be', 'hamza4');
         await lmdb.put('/authorize/track/id/1000000/service/id/be', 'hamza4');
         await lmdb.put('/auth/track/id/1000000/service/id/be', 'hamza4');
+        await lmdb.put('/auth/track/id/1000001/service/id/be', 'hamza4');
+        await lmdb.put('/auth/track/id/1000002/service/id/be', 'hamza4');
         async function ran(i: number) {
             const arr = new Uint8Array(255);
             arr.fill(255, 0, 254);
@@ -213,6 +248,18 @@ describe('lmdbService', () => {
         }
         const range102 = (await ran3(2)).asArray;
         expect(range102.length).to.equal(14);
+
+
+        async function ran4(i: number) {
+            const arr = new Uint8Array(1024);
+            arr.fill(255, 0, 1024);
+            const key = `/authorize/`;
+            Buffer.from(key).copy(arr, 0, 0, key.length);
+            const range = await lmdb.range({ start: key, end: arr });
+            return range;
+        }
+        const range103 = (await ran4(2)).asArray;
+        expect(range103.length).to.equal(14);
 
 
         await lmdb.close();

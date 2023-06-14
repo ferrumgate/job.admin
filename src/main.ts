@@ -20,6 +20,8 @@ import { DhcpService } from "rest.portal/service/dhcpService";
 import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
 import { CheckLocalDns } from "./task/checkLocalDns";
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import { TrackWatcherTask } from "./task/trackWatcherTask";
+import { PAuthzWatcherTask } from "./task/pAuthzWatcherTask";
 
 
 
@@ -68,6 +70,18 @@ async function main() {
     await fs.mkdirSync(dnsDbFolder, { recursive: true });
     const localDns = new CheckLocalDns(dnsDbFolder, redisConfig, bcastService, inputService);
     await localDns.start();
+
+
+    const trackDbFolder = process.env.TRACK_DB_FOLDER || '/var/lib/ferrumgate/track';
+    await fs.mkdirSync(trackDbFolder, { recursive: true });
+    const trackWatcher = new TrackWatcherTask(trackDbFolder, redisConfig, bcastService);
+    await trackWatcher.start();
+
+
+    const authzFolder = process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz';
+    await fs.mkdirSync(authzFolder, { recursive: true });
+    const authzWatcher = new PAuthzWatcherTask(authzFolder, redisConfig, bcastService);
+    await authzWatcher.start();
 
 
 
@@ -124,6 +138,8 @@ async function main() {
         await checkServices.stop();
         await redisConfig.stop();
         await localDns.stop();
+        await trackWatcher.stop();
+        await authzWatcher.stop();
 
 
 

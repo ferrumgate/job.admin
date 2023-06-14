@@ -19,11 +19,12 @@ export class LmdbService {
         }
         this.rootDatabases.clear();
     }
-    static async open(name: string, dirname: string = '.', encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'string', maxDb = 3,
+    static async open(name: string, dirname: string = '.', encoding: 'msgpack' | 'json' | 'string' | 'binary' | 'ordered-binary' = 'string', maxDb = 24,
         maxSize = 1073741824, dupSort = false,
     ): Promise<LmdbService> {
         if (!LmdbService.rootDatabases.has(dirname)) {
             const rootDatabase = lmdb.open(dirname, {
+                maxReaders: 512,
                 mapSize: maxSize,
                 maxDbs: maxDb,
                 dupSort: dupSort,
