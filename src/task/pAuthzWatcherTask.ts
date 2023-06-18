@@ -91,19 +91,18 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
             const rules = policy.rules.sort((a, b) => {
                 return order.findIndex(d => d == a.id) - order.findIndex(d => d == b.id);
             });
+            const now = new Date().getTime().toString();
+            for (const rule of rules) {
+                keyValues.push({ key: this.createAuthzKey(rule), value: this.createAuthzValue(rule) })
+                keyValues.push({ key: this.createAuthzUpdateKey(rule), value: now })
+            }
             const services = await this.redisConfigService.getServicesAll();
             for (const svc of services) {
                 const filtered = rules.filter(x => x.serviceId == svc.id);
-                for (const fil of filtered) {
-                    const key = this.createDataKey(svc);
-                    const value = this.createDataValue(svc, fil);
-                    keyValues.push({ key: key, value: value });
+                keyValues.push({ key: this.createServiceKey(svc), value: this.createServiceValue(filtered) })
+                keyValues.push({ key: this.createServiceUpdateTimeKey(svc), value: now })
 
-                    const keyUpdate = this.createLastUpdateKey(svc);
-                    keyValues.push({ key: keyUpdate, value: new Date().getTime().toString() })
-                }
             }
-
 
             await this.lmdbService.batch(async () => {
                 await this.lmdbService.clear();
@@ -119,39 +118,48 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
     }
 
     createRootKey() {
-        return `/authz/service/id/`
+        return `/authz/`
+    }
+    createAuthzKey(rule: AuthorizationRule) {
+        return `/authz/id/${rule.id}`
+    }
+    createAuthzUpdateKey(rule: AuthorizationRule) {
+        return `/authz/id/${rule.id}/updateTime`
     }
 
-    createBaseKey(svc: Service) {
-        return `/authz/service/id/${svc.id}/`
+
+    createServiceKey(svc: Service) {
+        return `/authz/service/id/${svc.id}/user/list`
     }
-    createDataKey(svc: Service) {
-
-        return `/authz/service/id/${svc.id}/data`
-
-    }
-    createLastUpdateKey(svc: Service) {
-
-        return `/authz/service/id/${svc.id}/updateTime`
-
+    createServiceUpdateTimeKey(svc: Service) {
+        return `/authz/service/id/${svc.id}/user/list/updateTime`
     }
 
-    createDataValues(svc: Service, rules: AuthorizationRule[]) {
-        let str = ``;
+
+    createServiceValue(rules: AuthorizationRule[]) {
+        let data = ``;
         for (const rule of rules) {
-            str += this.createDataValue(svc, rule);
+            data += `
+[[rules]]
+userOrgroupIds = ",${rule.userOrgroupIds.filter(y => y.trim()).map(a => a).join(',')},"
+id = "${rule.id}"            
+`
         }
-        if (rules.length) return str;
-        return ``;
+
+        if (data.length >= 1048576) {
+            logger.warn(`authz toml is bigger than 1M`);
+            return ``;
+        }
+        return data;
     }
 
 
-    createDataValue(svc: Service, rule: AuthorizationRule) {
+    createAuthzValue(rule: AuthorizationRule) {
         let fqdnIntelStr = ''
         const fqdnIntel = rule.profile.fqdnIntelligence
         if (fqdnIntel) {
             fqdnIntelStr = `
-[rules.fqdnIntelligence]
+[fqdnIntelligence]
 ignoreFqdns = ",${fqdnIntel.ignoreFqdns.filter(y => y.fqdn.trim()).filter(y => y).map(x => x.fqdn).join(',')},"
 ignoreLists = ",${fqdnIntel.ignoreLists.filter(y => y.trim()).filter(y => y).join(',')},"
 whiteFqdns = ",${fqdnIntel.whiteFqdns.filter(y => y.fqdn.trim()).filter(y => y).map(x => x.fqdn).join(',')},"
@@ -160,11 +168,16 @@ blackFqdns = ",${fqdnIntel.blackFqdns.filter(y => y.fqdn.trim()).filter(y => y).
 blackLists = ",${fqdnIntel.blackLists.filter(y => y.trim()).filter(y => y).join(',')},"
 `
         }
-        return `
-[[rules]]        
+        let data = `        
 id = "${rule.id}"
+userOrgroupIds = ",${rule.userOrgroupIds.filter(y => y.trim()).filter(y => y).join(',')},"
 ${fqdnIntelStr || ''}
 `;
+        if (data.length >= 1048576) {
+            logger.warn(`authz toml is bigger than 1M`);
+            return ``;
+        }
+        return data;
     }
 
 
@@ -180,9 +193,9 @@ ${fqdnIntelStr || ''}
         return range;
 
     }
-    async lmdbClearSvc(svc: Service) {
-        logger.info(`authz watcher clearing serviveId: ${svc.id} `)
-        const range = await this.lmdbGetRange(this.createBaseKey(svc));
+    async lmdbClearSvc() {
+        logger.info(`authz watcher clearing `)
+        const range = await this.lmdbGetRange(this.createRootKey());
         if (range.asArray.length)
             await this.lmdbService.batch(async () => {
                 for (const r of range) {

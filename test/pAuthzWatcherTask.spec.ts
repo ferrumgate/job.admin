@@ -249,18 +249,29 @@ describe('pAuthzWatcherTask', () => {
 
         {
 
-            const ml = watcher.createDataValues(service1, [rule1, rule2, rule3]);
+            const ml = watcher.createAuthzValue(rule1);
             console.log(ml);
             expect(ml.includes('ignoreFqdns')).to.be.true
             const data = toml.parse(ml);
+            console.log(data);
+            expect(data.fqdnIntelligence.ignoreFqdns).to.equal(',abc.com,deneme.com,');
+            expect(data.fqdnIntelligence.ignoreLists).to.equal(',12a,b12b,');
+            expect(data.fqdnIntelligence.whiteFqdns).to.equal(',22.com,33.com,');
+            expect(data.fqdnIntelligence.whiteLists).to.equal(',d12a,e12b,');
+            expect(data.fqdnIntelligence.blackFqdns).to.equal(',44.com,55.com,');
+            expect(data.fqdnIntelligence.blackLists).to.equal(',g12a,z12b,');
+        }
+
+        {
+
+            const ml = watcher.createServiceValue([rule1, rule2, rule3]);
+            console.log(ml);
+            expect(ml.includes('rules')).to.be.true
+            const data = toml.parse(ml);
             expect(data.rules.length).to.equal(3)
             console.log(data);
-            expect(data.rules[0].fqdnIntelligence.ignoreFqdns).to.equal(',abc.com,deneme.com,');
-            expect(data.rules[0].fqdnIntelligence.ignoreLists).to.equal(',12a,b12b,');
-            expect(data.rules[0].fqdnIntelligence.whiteFqdns).to.equal(',22.com,33.com,');
-            expect(data.rules[0].fqdnIntelligence.whiteLists).to.equal(',d12a,e12b,');
-            expect(data.rules[0].fqdnIntelligence.blackFqdns).to.equal(',44.com,55.com,');
-            expect(data.rules[0].fqdnIntelligence.blackLists).to.equal(',g12a,z12b,');
+            expect(data.rules[0].userOrgroupIds).to.equal("," + rule1.userOrgroupIds.join(',') + ",");
+
         }
 
 
@@ -315,7 +326,7 @@ describe('pAuthzWatcherTask', () => {
 
         const keys = (await watcher.lmdbGetRange('/')).asArray;
 
-        expect(keys.length).to.equal(4);
+        expect(keys.length).to.equal(10);
         await watcher.stop();
         await redisConfig.stop();
         await redisConfigService.stop();

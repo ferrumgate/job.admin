@@ -171,13 +171,18 @@ export class TrackWatcherTask extends GatewayBasedTask {
     }
     toML(user: User) {
         return `
-userId = "${user.id}"
-groupIds = [${user.groupIds.map(x => `"` + x + `"`).join(',')}]
+userId = ",${user.id},"
+groupIds = ",${user.groupIds.filter(x => x.trim()).filter(y => y).join(',')},"
 `
     }
 
     async lmdbWrite(tun: Tunnel, user: User) {
         const toml = this.toML(user);
+        if (toml.length >= 1048576) {
+            logger.warn(`value length is bigger than 1M`);
+            return;
+        }
+
         await this.lmdbService.put(this.createDataKey(tun), toml);
         await this.lmdbService.put(this.createLastUpdateKey(tun), new Date().getTime().toString())
     }
