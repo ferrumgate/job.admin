@@ -15,10 +15,12 @@ import toml from 'toml';
 export class PolicyWatcherTask extends GatewayBasedTask {
 
     protected lmdbService!: LmdbService;
-    protected unstableSystem = false;
+
     protected tunnels = new Map();
     protected configChangedTimes: number[] = [];
     protected configChangedTimer: any;
+    protected errorCount = 0;
+    protected errorLastTime = 0;
     constructor(private dbFolder: string, private policyService: PolicyService,
         private redisConfigService: RedisConfigWatchService,
         private bcastEvents: BroadcastService) {
@@ -27,7 +29,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     }
     async start() {
 
-        this.lmdbService = await LmdbService.open('policy', this.dbFolder, 'string', 16);
+        this.lmdbService = await LmdbService.open('policy', this.dbFolder, 'string', 24);
         logger.info(`opening policy lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
@@ -51,19 +53,16 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
-    isStable() {
-        if (this.unstableSystem) throw new Error('unstable policy watcher');
-    }
+
 
     async tunnelExpired(tun: Tunnel) {
         try {
             logger.info(`policy watcher tunnel expired tunId:${tun.id}`)
             this.tunnels.delete(tun.id);
-            this.isStable();
             await this.lmdbClearTunnel(tun);
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -84,7 +83,6 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         try {
             logger.info(`policy watcher tunnel confirmed trackId: ${tun.trackId}`)
             this.tunnels.set(tun.id, tun);
-            this.isStable();
 
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
@@ -109,7 +107,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -129,13 +127,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             }
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+
         }
     }
 
     async executeConfigChanged() {
         try {
-            this.isStable();
+
             if (!this.configChangedTimes.length) return;
             if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
             logger.info(`policy watcher config changed detected`);
@@ -185,10 +183,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             }
 
             this.configChangedTimes.splice(0, removeLength);
-
+            this.errorCount = 0;
+            this.errorLastTime = 0;
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.errorCount++;
+            this.errorLastTime = new Date().getTime();
+
         }
     }
 

@@ -60,25 +60,25 @@ async function main() {
 
     const inputService = new InputService();
 
-
-    const dbFolder = process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
-    await fs.mkdirSync(dbFolder, { recursive: true });
-    const policyWatcher = new PolicyWatcherTask(dbFolder, policyService, redisConfig, bcastService);
+    const dbFolder = process.env.DB_FOLDER || '/var/lib/ferrumgate/db';
+    const policy_dbFolder = dbFolder || process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
+    await fs.mkdirSync(policy_dbFolder, { recursive: true });
+    const policyWatcher = new PolicyWatcherTask(policy_dbFolder, policyService, redisConfig, bcastService);
     await policyWatcher.start();
 
-    const dnsDbFolder = process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns';
+    const dnsDbFolder = dbFolder || process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns';
     await fs.mkdirSync(dnsDbFolder, { recursive: true });
     const localDns = new CheckLocalDns(dnsDbFolder, redisConfig, bcastService, inputService);
     await localDns.start();
 
 
-    const trackDbFolder = process.env.TRACK_DB_FOLDER || '/var/lib/ferrumgate/track';
+    const trackDbFolder = dbFolder || process.env.TRACK_DB_FOLDER || '/var/lib/ferrumgate/track';
     await fs.mkdirSync(trackDbFolder, { recursive: true });
     const trackWatcher = new TrackWatcherTask(trackDbFolder, redisConfig, bcastService);
     await trackWatcher.start();
 
 
-    const authzFolder = process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz';
+    const authzFolder = dbFolder || process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz';
     await fs.mkdirSync(authzFolder, { recursive: true });
     const authzWatcher = new PAuthzWatcherTask(authzFolder, redisConfig, bcastService);
     await authzWatcher.start();

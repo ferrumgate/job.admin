@@ -24,7 +24,8 @@ export class DockerService {
         let udp_listen = isUdp ? `-e RAW_LISTEN_UDP_PORT=${port}` : '';
         let redis_pass = process.env.REDIS_PASS ? `-e REDIS_PASS=${process.env.REDIS_PASS}` : ''
         let redis_intel_pass = process.env.REDIS_INTEL_PASS ? `-e REDIS_INTEL_PASS=${process.env.REDIS_INTEL_PASS}` : ''
-
+        let db_folder = process.env.DB_FOLDER ? `-e DB_FOLDER=${process.env.DB_FOLDER}` : '';
+        let disable_policy = process.env.DISABLE_POLICY ? `-e DISABLE_POLICY=${process.env.DISABLE_POLICY}` : '';
 
         let env = `
 -e LOG_LEVEL=${process.env.LOG_LEVEL || 'info'}
@@ -38,9 +39,13 @@ ${tcp} ${udp}
 -e RAW_LISTEN_IP=${svc.assignedIp}
 -e PROTOCOL_TYPE=${svc.protocol || 'raw'}
 -e SYSLOG_HOST=${process.env.SYSLOG_HOST || 'log:9292'}
+${db_folder}
 -e POLICY_DB_FOLDER=${process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy'}
 -e DNS_DB_FOLDER=${process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns'}
+-e AUTHZ_DB_FOLDER=${process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz'}
+-e TRACK_DB_FOLDER=${process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/track'}
 -e ROOT_FQDN=${rootFqdn || 'ferrumgate.zero'}
+${disable_policy}
 ${tcp_listen} ${udp_listen}
 `;
         return env.replace(/\n/g, ' ');

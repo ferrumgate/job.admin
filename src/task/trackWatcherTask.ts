@@ -15,10 +15,11 @@ import toml from 'toml';
 export class TrackWatcherTask extends GatewayBasedTask {
 
     protected lmdbService!: LmdbService;
-    protected unstableSystem = false;
     protected tunnels: Map<string, Tunnel> = new Map();
     protected configChangedTimes: number[] = [];
     protected configChangedTimer: any;
+    protected errorCount = 0;
+    protected errorLastTime = 0;
     constructor(private dbFolder: string, private redisConfigService: RedisConfigWatchService,
         private bcastEvents: BroadcastService) {
         super()
@@ -26,7 +27,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
     }
     async start() {
 
-        this.lmdbService = await LmdbService.open('track', this.dbFolder, 'string', 16);
+        this.lmdbService = await LmdbService.open('track', this.dbFolder, 'string', 24);
         logger.info(`opening track lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
@@ -50,19 +51,16 @@ export class TrackWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
-    isStable() {
-        if (this.unstableSystem) throw new Error('unstable track watcher');
-    }
+
 
     async tunnelExpired(tun: Tunnel) {
         try {
             logger.info(`track watcher tunnel expired tunId:${tun.id}`)
             this.tunnels.delete(tun.id || '');
-            this.isStable();
             await this.lmdbClearTunnel(tun);
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -88,8 +86,6 @@ export class TrackWatcherTask extends GatewayBasedTask {
         try {
             logger.info(`track watcher tunnel confirmed trackId: ${tun.trackId}`)
             this.tunnels.set(tun.id || '', tun);
-            this.isStable();
-
             const user = await this.getUser(tun.userId || '');
             if (!user) {
                 logger.warn(`track watcher tunnel trackId: ${tun.trackId} network not found`);
@@ -101,7 +97,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
 
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -116,17 +112,16 @@ export class TrackWatcherTask extends GatewayBasedTask {
             }
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
         }
     }
-
+    //makes full sync
     async executeConfigChanged() {
         try {
-            this.isStable();
+
             if (!this.configChangedTimes.length) return;
             if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
             logger.info(`track watcher config changed detected`);
-
+            let removeLength = this.configChangedTimes.length;
 
             let keyValues: { key: string, value: string }[] = [];
             for (const tun of this.tunnels.values()) {
@@ -145,10 +140,14 @@ export class TrackWatcherTask extends GatewayBasedTask {
                     await this.lmdbService.put(r.key, r.value);
                 }
             })
+            this.configChangedTimes.splice(0, removeLength);
+            this.errorCount = 0;
+            this.errorLastTime = 0;
 
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.errorCount++;
+            this.errorLastTime = new Date().getTime();
         }
     }
 

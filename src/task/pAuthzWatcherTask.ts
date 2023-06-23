@@ -16,10 +16,11 @@ import { AuthorizationProfile } from "rest.portal/model/authorizationProfile";
 export class PAuthzWatcherTask extends GatewayBasedTask {
 
     protected lmdbService!: LmdbService;
-    protected unstableSystem = false;
     protected tunnels: Map<string, Tunnel> = new Map();
     protected configChangedTimes: number[] = [];
     protected configChangedTimer: any;
+    protected errorCount = 0;
+    protected errorLastTime = 0;
     constructor(private dbFolder: string, private redisConfigService: RedisConfigWatchService,
         private bcastEvents: BroadcastService) {
         super()
@@ -28,7 +29,7 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
     async start() {
 
         this.lmdbService = await LmdbService.open('authz', this.dbFolder, 'string', 16);
-        logger.info(`opening track lmdb folder ${this.dbFolder}`);
+        logger.info(`opening authz lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('configChanged', async (data: ConfigWatch<any>) => {
             await this.configChanged(data);
@@ -39,7 +40,7 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
         //start
         setTimeout(() => {
             this.configChangedTimes.push(new Date().getTime());
-        }, 1000);
+        }, 3000);
     }
 
     async stop() {
@@ -49,9 +50,7 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
-    isStable() {
-        if (this.unstableSystem) throw new Error('unstable track watcher');
-    }
+
 
 
 
@@ -72,17 +71,16 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
             }
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
         }
     }
 
     async executeConfigChanged() {
         try {
-            this.isStable();
+            //no need to check if system is ok
             if (!this.configChangedTimes.length) return;
             if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
             logger.info(`authz watcher config changed detected`);
-
+            let removeLength = this.configChangedTimes.length;
 
             let keyValues: { key: string, value: string }[] = [];
             const policy = await this.redisConfigService.getAuthorizationPolicy();
@@ -110,10 +108,15 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
                     await this.lmdbService.put(r.key, r.value);
                 }
             })
+            this.configChangedTimes.splice(0, removeLength);
+            this.errorCount = 0;
+            this.errorLastTime = 0;
 
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.errorCount++;
+            this.errorLastTime = new Date().getTime();
+
         }
     }
 

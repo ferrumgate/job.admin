@@ -123,7 +123,7 @@ export class CheckLocalDns {
     }
     async init() {
         if (!this.lmdbService) {
-            this.lmdbService = await LmdbService.open('dns', this.dbFolder, 'string', 16);
+            this.lmdbService = await LmdbService.open('dns', this.dbFolder, 'string', 24);
             logger.info(`opening dns lmdb folder ${this.dbFolder}`);
 
         }
