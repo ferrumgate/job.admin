@@ -60,7 +60,7 @@ async function main() {
 
     const inputService = new InputService();
 
-    const dbFolder = process.env.DB_FOLDER || '/var/lib/ferrumgate/db';
+    const dbFolder = process.env.DB_FOLDER;
     const policy_dbFolder = dbFolder || process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
     await fs.mkdirSync(policy_dbFolder, { recursive: true });
     const policyWatcher = new PolicyWatcherTask(policy_dbFolder, policyService, redisConfig, bcastService);
