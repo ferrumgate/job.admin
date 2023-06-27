@@ -151,7 +151,7 @@ ${image}`
             const podsSliced = pods.slice(page * pageSize, (page + 1) * pageSize)
             if (!podsSliced.length) break;
             page++;
-            let foundeds = await this.inspect(pods.map(x => x.id));
+            let foundeds = await this.inspect(podsSliced.map(x => x.id));
             podDetails = podDetails.concat(...foundeds);
         }
         podDetails.forEach(x => {
