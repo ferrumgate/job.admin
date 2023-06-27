@@ -85,7 +85,7 @@ ${image}`
         return command;
     }
     async inspect(podId: string | string[]) {
-        const inspect = await this.execute(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null`) as string;
+        const inspect = await this.execute(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null || true`) as string;
         //const inspect = await this.executeWithoutError(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId}`) as string;
 
         try {
@@ -108,12 +108,12 @@ ${image}`
         })
         let podDetails: any[] = [];
         let page = 0;
-        let pageSize = 100;
+        let pageSize = 50;
         while (true) {
             const podsSliced = pods.slice(page * pageSize, (page + 1) * pageSize)
             if (!podsSliced.length) break;
             page++;
-            let foundeds = await this.inspect(pods.map(x => x.id));
+            let foundeds = await this.inspect(podsSliced.map(x => x.id));
             podDetails = podDetails.concat(...foundeds);
         }
         podDetails.forEach(x => {
