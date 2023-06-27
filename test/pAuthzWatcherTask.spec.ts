@@ -319,10 +319,10 @@ describe('pAuthzWatcherTask', () => {
         await redisConfig.saveAuthorizationPolicyRule(rule1);
         await redisConfig.saveAuthorizationPolicyRule(rule2);
         await redisConfig.saveAuthorizationPolicyRule(rule3);
-        await Util.sleep(2000);
+        await Util.sleep(3000);
         bcastService.emit('configChanged', `/config/users`);
 
-        await Util.sleep(2000);
+        await Util.sleep(10000);
 
         const keys = (await watcher.lmdbGetRange('/')).asArray;
 

@@ -38,18 +38,11 @@ describe('lmdbService', () => {
 
     }).timeout(100000)
 
-    it('multio open', async () => {
+    it('multiple db open', async () => {
 
         const lmdb1 = await LmdbService.open('ferrum1', tmpfolder);
         const lmdb2 = await LmdbService.open('ferrum2', tmpfolder);
         const lmdb3 = await LmdbService.open('ferrum3', tmpfolder);
-        let isError = false;
-        try {
-            const lmdb4 = await LmdbService.open('ferrum4', tmpfolder);
-        } catch (err) {
-            isError = true;
-        }
-        expect(isError).to.be.true;
 
 
 

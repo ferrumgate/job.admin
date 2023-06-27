@@ -1,5 +1,6 @@
 import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
+import * as ChildProcess from "node:child_process";
 
 export interface Pod {
     id: string, image: string, name: string; details?: any; svc?: { id: string, port: number, isTcp: boolean, isUdp: boolean, replica: number, lastUpdate: string, gatewayId: string }
@@ -58,8 +59,14 @@ ${tcp_listen} ${udp_listen}
 -e INSTANCE_ID=${Util.randomNumberString(16)}`
         return env.replace(/\n/g, ' ');
     }
+
+
+
     async execute(cmd: string) {
         return await Util.exec(cmd)
+    }
+    async executeSpawn(cmd: string, args?: string[], throwError = true, redirectError = false) {
+        return await Util.spawn(cmd, args, throwError, redirectError);
     }
     async executeWithoutError(cmd: string) {
         return await Util.exec(cmd, false)
@@ -93,7 +100,15 @@ ${image}`
         return command;
     }
     async inspect(podId: string | string[]) {
-        const inspect = await this.execute(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null`) as string;
+        let command = [];
+        command.push('docker');
+        command.push('inspect');
+        if (Array.isArray(podId))
+            command = command.concat(podId);
+        else
+            command.push(podId);
+        const inspect = await this.executeSpawn(command[0], command.slice(1), false, true) as string;
+        //const inspect = await this.executeSpawn(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null || true `) as string;
         //const inspect = await this.executeWithoutError(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId}`) as string;
 
         try {
@@ -105,7 +120,22 @@ ${image}`
 
     async getAllRunning(gatewayId?: string): Promise<Pod[]> {
         logger.info(`get all running pods`);
-        const output = await this.execute(`docker ps --no-trunc  --filter status=running ${gatewayId ? '--filter label=Ferrum_Gateway_Id=' + gatewayId : ''} --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
+        let command = [];
+        command.push('docker');
+        command.push('ps');
+        command.push('--no-trunc');
+        command.push('--filter');
+        command.push('status=running');
+        if (gatewayId) {
+            command.push('--filter');
+            command.push(`label=Ferrum_Gateway_Id=${gatewayId}`);
+
+        }
+        command.push('--format');
+        command.push(`{{.ID}} {{.Image}} {{.Names}}`);
+
+        const output = await this.executeSpawn(command[0], command.slice(1)) as string;
+        //const output2 = await this.execute(`docker ps --no-trunc  --filter status=running ${gatewayId ? '--filter label=Ferrum_Gateway_Id=' + gatewayId : ''} --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
         const rows = output.split('\n').map(x => x.trim()).filter(x => x);
         let pods = rows.map((x) => {
             const tmp = x.split(' ');
@@ -116,7 +146,7 @@ ${image}`
         })
         let podDetails: any[] = [];
         let page = 0;
-        let pageSize = 100;
+        let pageSize = 50;
         while (true) {
             const podsSliced = pods.slice(page * pageSize, (page + 1) * pageSize)
             if (!podsSliced.length) break;

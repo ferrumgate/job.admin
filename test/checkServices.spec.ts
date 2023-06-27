@@ -1,4 +1,5 @@
 
+
 //docker run --net=host --name redis --rm -d redis
 
 
@@ -204,6 +205,8 @@ describe('checkServices', () => {
 
 
     it('compare', async () => {
+        process.env.REDIS_HOST = "127.0.0.1:6379"
+        process.env.REDIS_INTEL_HOST = "127.0.0.1:6379"
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
@@ -250,12 +253,16 @@ describe('checkServices', () => {
         await Util.sleep(1000);
 
         await checkservices.closeAllServices();
+        delete process.env.REDIS_HOST;
+        delete process.env.REDIS_INTEL_HOST;
 
     }).timeout(1200000);
 
 
 
     it('compare', async () => {
+        process.env.REDIS_HOST = "127.0.0.1:6379"
+        process.env.REDIS_INTEL_HOST = "127.0.0.1:6379"
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
@@ -273,7 +280,7 @@ describe('checkServices', () => {
             await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
         }
         await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
-        await Util.sleep(1000);
+        await Util.sleep(3000);
         //start 1 service with 4 ports
         service.ports.push({ port: 4000, isTcp: true, isUdp: true });
         service.ports.push({ port: 5000, isTcp: false, isUdp: true });
@@ -285,7 +292,7 @@ describe('checkServices', () => {
 
         let runnings = await docker.getAllRunning(gatewayId);
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
-
+        await Util.sleep(5000);
         runnings = await docker.getAllRunning(gatewayId);
         expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(4);
 
@@ -375,15 +382,57 @@ describe('checkServices', () => {
         await Util.sleep(1000);
 
 
-
-
-
-
-
-
+        delete process.env.REDIS_HOST;
+        delete process.env.REDIS_INTEL_HOST;
 
 
     }).timeout(1200000);
+
+
+    it('open 250 service', async () => {
+        process.env.REDIS_HOST = "127.0.0.1:6379"
+        process.env.REDIS_INTEL_HOST = "127.0.0.1:6379"
+        await closeAllServices();
+        const { gateway, network, service } = await createSampleData();
+        const docker = new DockerService();
+
+
+
+        const config = new MockConfig();
+        const checkservices = new CheckServices(config, new BroadcastService(), docker);
+        //const gatewayId = gatewayId
+        checkservices.setGatewayId(gatewayId);
+
+        const isWorkingStr = await Util.exec(`docker ps|grep fg-${gatewayId}-secure.server|wc -l`) as string;
+        const isWorking = Number(isWorkingStr);
+        if (isWorking) {
+            await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
+        }
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.sleep(3000);
+        //start 1 service with 4 ports
+        for (let i = 0; i < 250; ++i)
+            service.ports.push({ port: 4000 + i, isTcp: true, isUdp: true });
+
+        let runnings = await docker.getAllRunning(gatewayId);
+        await checkservices.compare(runnings, [service], 'ferrumgate.zero');
+        await Util.sleep(5000);
+        runnings = await docker.getAllRunning(gatewayId);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(250);
+
+        await checkservices.closeAllServices();
+        // start 1 port previously
+
+
+
+
+        delete process.env.REDIS_HOST;
+        delete process.env.REDIS_INTEL_HOST;
+
+
+    }).timeout(1200000);
+
+
 
 
 })

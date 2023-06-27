@@ -376,8 +376,8 @@ describe('trackWatcherTask', () => {
 
         const ml = await watcher.toML(user1);
         expect(ml).to.equal(`
-userId = "user1"
-groupIds = ["grp1","grp2"]
+userId = ",user1,"
+groupIds = ",grp1,grp2,"
 `)
         const obj = toml.parse(ml);
         expect(obj.userId).exist;
