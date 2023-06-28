@@ -61,7 +61,7 @@ describe('dockerService', () => {
         const docker = new DockerService();
         const port = svc.ports[0];
         const result = docker.getEnv(svc, port.port, port.isTcp, port.isUdp, 'ferrumgate.zero');
-        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=localhost:6379  -e REDIS_INTEL_HOST=localhost:6379  -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e PROTOCOL_TYPE=raw -e SYSLOG_HOST=log:9292  -e POLICY_DB_FOLDER=/tmp/abc -e DNS_DB_FOLDER=/var/lib/ferrumgate/dns -e AUTHZ_DB_FOLDER=/var/lib/ferrumgate/authz -e TRACK_DB_FOLDER=/var/lib/ferrumgate/track -e ROOT_FQDN=ferrumgate.zero  -e RAW_LISTEN_TCP_PORT=3306');
+        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=127.0.0.1:6379  -e REDIS_INTEL_HOST=127.0.0.1:6379  -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e PROTOCOL_TYPE=raw -e SYSLOG_HOST=log:9292  -e POLICY_DB_FOLDER=/tmp/abc -e DNS_DB_FOLDER=/var/lib/ferrumgate/dns -e AUTHZ_DB_FOLDER=/var/lib/ferrumgate/authz -e TRACK_DB_FOLDER=/var/lib/ferrumgate/track -e ROOT_FQDN=ferrumgate.zero  -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
 

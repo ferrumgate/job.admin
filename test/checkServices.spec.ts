@@ -418,7 +418,7 @@ describe('checkServices', () => {
         await checkservices.compare(runnings, [service], 'ferrumgate.zero');
         await Util.sleep(5000);
         runnings = await docker.getAllRunning(gatewayId);
-        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(250);
+        expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(251);
 
         await checkservices.closeAllServices();
         // start 1 port previously

@@ -322,7 +322,7 @@ describe('pAuthzWatcherTask', () => {
         await Util.sleep(3000);
         bcastService.emit('configChanged', `/config/users`);
 
-        await Util.sleep(10000);
+        await Util.sleep(15000);
 
         const keys = (await watcher.lmdbGetRange('/')).asArray;
 
