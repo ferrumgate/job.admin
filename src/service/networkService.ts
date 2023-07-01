@@ -7,13 +7,13 @@ import { logger, Util } from "rest.portal";
 export class NetworkService {
 
     static async ipAddr(int: string, ip: string) {
+        if (!ip.includes('/'))
+            ip = ip + '/32';
         logger.info(`setting ip ${ip} to interface ${int}`);
         const exitsStr = await Util.exec(`ip a|grep ${ip}|wc -l`);
         const exits = Number(exitsStr);
         if (!exits) {
             logger.info(`ip ${ip} not found on interface ${int}`);
-            if (!ip.includes(`/`))
-                ip += '/32';
             const log = await Util.exec(`ip addr add ${ip} dev ${int}`)
             if (log)
                 logger.info(log);

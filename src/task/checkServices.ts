@@ -24,7 +24,7 @@ export class CheckServices extends GatewayBasedTask {
 
     protected timerCheck: any | null = null;
 
-
+    private confChangedTimes: number[] = [];
     constructor(private configService: RedisConfigWatchService,
         protected bcastService: BroadcastService,
         protected dockerService: DockerService) {
@@ -32,6 +32,9 @@ export class CheckServices extends GatewayBasedTask {
         this.bcastService.on('configChanged', (evt: ConfigWatch<any>) => {
             this.onConfigChanged(evt);
         })
+        this.confChangedTimes.push(1);
+
+
     }
 
     public async closeAllServices() {
@@ -49,7 +52,9 @@ export class CheckServices extends GatewayBasedTask {
     public async checkServices() {
 
         try {
-
+            if (!this.confChangedTimes.length) return;
+            if (new Date().getTime() - this.confChangedTimes[0] < 30 * 1000)//every 30 seconds
+                return;
             logger.info(`checking all services`);
             await this.readGatewayId();
 
@@ -86,6 +91,7 @@ export class CheckServices extends GatewayBasedTask {
             const running = await this.dockerService.getAllRunning(this.gatewayId);
 
             await this.compare(running, services, rootFqdn);
+            this.confChangedTimes = [];
 
         } catch (err) {
             logger.error(err);
@@ -102,6 +108,7 @@ export class CheckServices extends GatewayBasedTask {
         })
         let stopedList = [];
         const svcname = `fg-${this.gatewayId}-svc`;
+        logger.info(`comparing pods :${running.length} to services: ${services.length}`)
         for (const run of running.filter(x => x.name.startsWith(svcname))) {//check running services that must stop
 
             const serviceId = run.name.replace(svcname, '').split('-')[2];
@@ -110,14 +117,14 @@ export class CheckServices extends GatewayBasedTask {
                 const svc = run.svc;
                 if (!svc || !service || !service.isEnabled) {
                     logger.warn(`closing pod ${run.name} status: ${service?.isEnabled} update:${service?.updateDate} data: ${JSON.stringify(run.svc)} `);
-                    try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                    await this.dockerService.stopIgnoreException(run);
                     stopedList.push(run);
 
 
                 } else
                     if (service.updateDate != svc.lastUpdate) {
                         logger.warn(`closing pod ${run.name} restart needs, update:${service?.updateDate}!=${svc.lastUpdate}`);
-                        try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                        await this.dockerService.stopIgnoreException(run);
                         stopedList.push(run);
 
                     }
@@ -126,12 +133,12 @@ export class CheckServices extends GatewayBasedTask {
                         const findedPort = service.ports.find(x => x.port == svc.port && x.isTcp == svc.isTcp && x.isUdp == svc.isUdp)
                         if (!findedPort) {
                             logger.warn(`closing pod ${run.name} port not found, data: ${JSON.stringify(run.svc)}`);
-                            try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                            await this.dockerService.stopIgnoreException(run);
                             stopedList.push(run);
                         } else {
                             if (service.count <= svc?.replica) {
                                 logger.warn(`closing pod ${run.name} replica not found, count: ${service?.count} data: ${JSON.stringify(run.svc)}`);
-                                try { await this.dockerService.stop(run); } catch (ignore) { logger.error(ignore) }
+                                await this.dockerService.stopIgnoreException(run);
                                 stopedList.push(run);
                             }
                         }
@@ -178,7 +185,7 @@ export class CheckServices extends GatewayBasedTask {
             }
             if (event.path.startsWith('/config/services') || event.path.startsWith('/config/gateways') || event.path.startsWith('/config/networks')) {
                 logger.info(`check immediately services`);
-                await this.checkServices();
+                this.confChangedTimes.unshift(0);
             }
 
         } catch (err) {
@@ -187,18 +194,21 @@ export class CheckServices extends GatewayBasedTask {
     }
 
 
+
+
     public override async start(): Promise<void> {
         try {
             await this.closeAllServices();
         } catch (err) {
             logger.error(err);
         }
+
         try {
 
-            await this.checkServices();
             this.timerCheck = setIntervalAsync(async () => {
+                this.confChangedTimes.push(new Date().getTime());
                 await this.checkServices();
-            }, 30 * 1000);
+            }, 3 * 1000);
         } catch (err) {
             logger.error(err);
         }

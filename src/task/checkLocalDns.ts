@@ -74,7 +74,7 @@ export class CheckLocalDns {
                 }
             }).filter(x => x);
 
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 await this.lmdbService.clear();
                 for (const dns of dnsRecords) {
                     if (dns && dns.fqdn && dns.ipv4) {
@@ -139,7 +139,6 @@ export class CheckLocalDns {
         }
         try {
 
-            await this.checkServices();
             this.timerCheck = setIntervalAsync(async () => {
                 await this.checkServices();
             }, 3 * 1000);

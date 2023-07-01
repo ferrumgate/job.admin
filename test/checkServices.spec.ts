@@ -223,7 +223,7 @@ describe('checkServices', () => {
         if (isWorking) {
             await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
         }
-        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=FerrumGatewayId=${gatewayId} -p 9393:80 nginx`);
         await Util.sleep(1000);
         //start 1 services
         const port = service.ports[0];
@@ -279,7 +279,7 @@ describe('checkServices', () => {
         if (isWorking) {
             await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
         }
-        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=FerrumGatewayId=${gatewayId} -p 9393:80 nginx`);
         await Util.sleep(3000);
         //start 1 service with 4 ports
         service.ports.push({ port: 4000, isTcp: true, isUdp: true });
@@ -408,7 +408,7 @@ describe('checkServices', () => {
         if (isWorking) {
             await Util.exec(`docker stop fg-${gatewayId}-secure.server`);
         }
-        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=Ferrum_Gateway_Id=${gatewayId} -p 9393:80 nginx`);
+        await Util.exec(`docker run -d --rm --name fg-${gatewayId}-secure.server --label=FerrumGatewayId=${gatewayId} -p 9393:80 nginx`);
         await Util.sleep(3000);
         //start 1 service with 4 ports
         for (let i = 0; i < 250; ++i)

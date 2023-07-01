@@ -134,7 +134,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
 
             }
 
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 await this.lmdbService.clear();
                 for (const r of keyValues) {
                     await this.lmdbService.put(r.key, r.value);
@@ -200,7 +200,7 @@ groupIds = ",${user.groupIds.filter(x => x.trim()).filter(y => y).join(',')},"
         logger.info(`track watcher clearing tunnel trackId: ${tun.trackId}`)
         const range = await this.lmdbGetRange(this.createBaseKey(tun));
         if (range.asArray.length)
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 for (const r of range) {
                     await this.lmdbService.remove(r.key);
                 }

@@ -148,7 +148,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
                 logger.info(`policy watcher network not found`);
-                await this.lmdbService.batch(async () => {
+                await this.lmdbService.transaction(async () => {
                     for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
                     }
@@ -172,7 +172,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
                 for (const iterator of writeList) {//for performance, no need to delete if we will put again
                     removeKeys.delete(iterator[0]);
                 }
-                await this.lmdbService.batch(async () => {
+                await this.lmdbService.transaction(async () => {
                     for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
                     }
@@ -224,7 +224,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         logger.info(`policy watcher clearing policy trackId: ${tun.trackId}`)
         const range = await this.lmdbGetTunnel(tun);
         if (range.asArray.length)
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 for (const r of range) {
                     await this.lmdbService.remove(r.key);
                 }

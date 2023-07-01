@@ -58,7 +58,9 @@ export class LmdbService {
 
     }
     async batch(action: () => Promise<void>) {
-        return await this.database.batch(action);
+        return await this.database.batch(async () => {
+            await action()
+        });
     }
     async get<T>(key: lmdb.Key) {
         return this.database.get(key) as T;

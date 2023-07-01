@@ -102,7 +102,7 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
 
             }
 
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 await this.lmdbService.clear();
                 for (const r of keyValues) {
                     await this.lmdbService.put(r.key, r.value);
@@ -200,7 +200,7 @@ ${fqdnIntelStr || ''}
         logger.info(`authz watcher clearing `)
         const range = await this.lmdbGetRange(this.createRootKey());
         if (range.asArray.length)
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 for (const r of range) {
                     await this.lmdbService.remove(r.key);
                 }

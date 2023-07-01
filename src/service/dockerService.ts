@@ -76,7 +76,7 @@ ${tcp_listen} ${udp_listen}
             await NetworkService.ipAddr('lo', svc.assignedIp);
     }
     getLabels(svc: Service, port: number, isTcp?: boolean, isUdp?: boolean, replicaNumber?: number, gatewayId?: string) {
-        return `--label Ferrum_Svc_LastUpdate=${svc.updateDate || ''} --label Ferrum_Svc_Id=${svc.id} --label Ferrum_Svc_Port=${port} --label Ferrum_Svc_IsTcp=${isTcp ? 'true' : 'false'} --label Ferrum_Svc_IsUdp=${isUdp ? 'true' : 'false'} --label Ferrum_Svc_Replica=${replicaNumber || 0} --label Ferrum_Gateway_Id=${gatewayId || 0}`
+        return `--label FerrumSvcLastUpdate=${svc.updateDate || ''} --label FerrumSvcId=${svc.id} --label FerrumSvcPort=${port} --label FerrumSvcIsTcp=${isTcp ? 'true' : 'false'} --label FerrumSvcIsUdp=${isUdp ? 'true' : 'false'} --label FerrumSvcReplica=${replicaNumber || 0} --label FerrumGatewayId=${gatewayId || 0}`
     }
     async run(svc: Service, gatewayId: string, network: string, rootFqdn: string, port: number, isTcp?: boolean, isUdp?: boolean, replica?: number) {
         logger.info(`starting ferrum service ${svc.name}`)
@@ -107,15 +107,28 @@ ${image}`
             command = command.concat(podId);
         else
             command.push(podId);
+        command.push(`--format`);
+
+        command.push('{{.ID}} {{json .Config.Labels}}')
         const inspect = await this.executeSpawn(command[0], command.slice(1), false, true) as string;
         //const inspect = await this.executeSpawn(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId} 2> /dev/null || true `) as string;
         //const inspect = await this.executeWithoutError(`docker inspect ${Array.isArray(podId) ? podId.join(' ') : podId}`) as string;
+        const items = inspect.split('\n').filter(y => y)
+        let rows: any[] = [];
+        items.forEach(a => {
+            try {
+                let parts = a.split(' ');
+                let obj = JSON.parse(parts.slice(1).join(' '));
+                obj.id = parts[0];
+                rows.push(obj);
+            }
+            catch (ignore) {
+                logger.error(inspect);
+                logger.error(ignore)
+            };
+        })
 
-        try {
-            return JSON.parse(inspect);
-        }
-        catch (ignore) { logger.error(ignore) };
-        return [];
+        return rows;
     }
 
     async getAllRunning(gatewayId?: string): Promise<Pod[]> {
@@ -128,14 +141,16 @@ ${image}`
         command.push('status=running');
         if (gatewayId) {
             command.push('--filter');
-            command.push(`label=Ferrum_Gateway_Id=${gatewayId}`);
+            command.push(`label=FerrumGatewayId=${gatewayId}`);
 
         }
         command.push('--format');
         command.push(`{{.ID}} {{.Image}} {{.Names}}`);
-
+        const startTime1 = process.hrtime();
         const output = await this.executeSpawn(command[0], command.slice(1)) as string;
-        //const output2 = await this.execute(`docker ps --no-trunc  --filter status=running ${gatewayId ? '--filter label=Ferrum_Gateway_Id=' + gatewayId : ''} --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
+        const endtime1 = process.hrtime(startTime1);
+        logger.info('execution time getAllRunning running (hr): %ds %dms', endtime1[0], endtime1[1] / 1000000)
+        //const output2 = await this.execute(`docker ps --no-trunc  --filter status=running ${gatewayId ? '--filter label=FerrumGatewayId=' + gatewayId : ''} --format "{{.ID}} {{.Image}} {{.Names}}"`) as string;
         const rows = output.split('\n').map(x => x.trim()).filter(x => x);
         let pods = rows.map((x) => {
             const tmp = x.split(' ');
@@ -144,6 +159,8 @@ ${image}`
             }
             return item;
         })
+
+        const startTime2 = process.hrtime();
         let podDetails: any[] = [];
         let page = 0;
         let pageSize = 50;
@@ -154,18 +171,20 @@ ${image}`
             let foundeds = await this.inspect(podsSliced.map(x => x.id));
             podDetails = podDetails.concat(...foundeds);
         }
+        const endtime2 = process.hrtime(startTime2);
+        logger.info('execution time getAllRunning inspect (hr): %ds %dms', endtime2[0], endtime2[1] / 1000000)
         podDetails.forEach(x => {
-            if (x.Id) {
-                let finded = pods.find(y => y.id == x.Id)
+            if (x.id) {
+                let finded = pods.find(y => y.id == x.id)
                 if (finded) {
                     finded.details = x;
-                    const serviceId = x.Config?.Labels.Ferrum_Svc_Id;
-                    const lastUpdate = x.Config?.Labels.Ferrum_Svc_LastUpdate;
-                    const port = Number(x.Config?.Labels.Ferrum_Svc_Port) || 0;
-                    const isTcp = x.Config?.Labels.Ferrum_Svc_IsTcp == 'true' ? true : false;
-                    const isUdp = x.Config?.Labels.Ferrum_Svc_IsUdp == 'true' ? true : false;
-                    const replica = Number(x.Config?.Labels.Ferrum_Svc_Replica) || 0;
-                    const gatewayId = x.Config?.Labels.Ferrum_Gateway_Id;
+                    const serviceId = x.FerrumSvcId;
+                    const lastUpdate = x.FerrumSvcLastUpdate;
+                    const port = Number(x.FerrumSvcPort) || 0;
+                    const isTcp = x.FerrumSvcIsTcp == 'true' ? true : false;
+                    const isUdp = x.FerrumSvcIsUdp == 'true' ? true : false;
+                    const replica = Number(x.FerrumSvcReplica) || 0;
+                    const gatewayId = x.FerrumGatewayId;
                     finded.svc = { id: serviceId, port: port, isTcp: isTcp, isUdp: isUdp, replica: replica, lastUpdate: lastUpdate, gatewayId: gatewayId };
 
                 }
@@ -183,6 +202,17 @@ ${image}`
         const log = await this.execute(`docker stop ${pod.id}`);
         if (log)
             logger.info(log);
+    }
+    async stopIgnoreException(pod: Pod) {
+        try {
+            logger.info(`stoping ferrum service ${pod.name}:${pod.id}`);
+            const log = await this.execute(`docker stop ${pod.id}`);
+            if (log)
+                logger.info(log);
+            logger.info(`stopped ferrum service ${pod.name}:${pod.id}`)
+        } catch (err) {
+            logger.error(err);
+        }
     }
 
 

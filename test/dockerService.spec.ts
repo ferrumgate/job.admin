@@ -61,7 +61,7 @@ describe('dockerService', () => {
         const docker = new DockerService();
         const port = svc.ports[0];
         const result = docker.getEnv(svc, port.port, port.isTcp, port.isUdp, 'ferrumgate.zero');
-        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=127.0.0.1:6379  -e REDIS_INTEL_HOST=127.0.0.1:6379  -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e PROTOCOL_TYPE=raw -e SYSLOG_HOST=log:9292  -e POLICY_DB_FOLDER=/tmp/abc -e DNS_DB_FOLDER=/var/lib/ferrumgate/dns -e AUTHZ_DB_FOLDER=/var/lib/ferrumgate/authz -e TRACK_DB_FOLDER=/var/lib/ferrumgate/track -e ROOT_FQDN=ferrumgate.zero  -e RAW_LISTEN_TCP_PORT=3306');
+        expect(result.trim()).to.equal('-e LOG_LEVEL=info -e SYSLOG_HOST=localhost:9292 -e REDIS_HOST=localhost:6379  -e REDIS_INTEL_HOST=localhost:6379  -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e PROTOCOL_TYPE=raw -e SYSLOG_HOST=log:9292  -e POLICY_DB_FOLDER=/tmp/abc -e DNS_DB_FOLDER=/var/lib/ferrumgate/dns -e AUTHZ_DB_FOLDER=/var/lib/ferrumgate/authz -e TRACK_DB_FOLDER=/var/lib/ferrumgate/track -e ROOT_FQDN=ferrumgate.zero  -e RAW_LISTEN_TCP_PORT=3306');
 
     }).timeout(1000)
 
@@ -71,11 +71,11 @@ describe('dockerService', () => {
         const docker = new DockerService();
         const port = svc.ports[0];
         const result = docker.getLabels(svc, port.port, port.isTcp, port.isUdp, 0);
-        expect(result.trim()).to.includes('--label Ferrum_Svc_LastUpdate');
-        expect(result.trim()).to.includes('--label Ferrum_Svc_IsTcp');
-        expect(result.trim()).to.includes('--label Ferrum_Svc_IsUdp');
-        expect(result.trim()).to.includes('--label Ferrum_Svc_Replica');
-        expect(result.trim()).to.includes('--label Ferrum_Gateway_Id');
+        expect(result.trim()).to.includes('--label FerrumSvcLastUpdate');
+        expect(result.trim()).to.includes('--label FerrumSvcIsTcp');
+        expect(result.trim()).to.includes('--label FerrumSvcIsUdp');
+        expect(result.trim()).to.includes('--label FerrumSvcReplica');
+        expect(result.trim()).to.includes('--label FerrumGatewayId');
 
     }).timeout(1000)
 
@@ -100,7 +100,7 @@ describe('dockerService', () => {
         const port = svc.ports[0];
         const result = await docker.run(svc, gatewayId, 'host', 'ferrumgate.zero', port.port, port.isTcp, port.isUdp);
         expect(docker.ip).to.equal('an ip');
-        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  fg-12345-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label Ferrum_Svc_LastUpdate=2022-11-20T12:13:19.260Z --label Ferrum_Svc_Id=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=12345 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
+        expect(docker.cmd.trim().includes('docker run --cap-add=NET_ADMIN --rm --restart=no --net=host --volume ferrumgate_shared:/var/run/ferrumgate --volume ferrumgate_lmdb:/var/lib/ferrumgate --name  fg-12345-svc-mysqld-Bpy2qwyzFgI7ldei-GN58V8 --label FerrumSvcLastUpdate=2022-11-20T12:13:19.260Z --label FerrumSvcId=Bpy2qwyzFgI7ldei  -d  -e LOG_LEVEL=info -e REDIS_HOST=localhost:6379   -e RAW_DESTINATION_HOST=1.2.3.4 -e RAW_DESTINATION_TCP_PORT=3306  -e RAW_LISTEN_IP=127.0.0.1 -e RAW_LISTEN_TCP_PORT=3306    -e GATEWAY_ID=12345 -e SERVICE_ID=Bpy2qwyzFgI7ldei -e INSTANCE_ID=aepm5Qp8Losvf8sg ferrum.io'))
         //console.log(docker);
 
     }).timeout(20000)
@@ -128,12 +128,12 @@ describe('dockerService', () => {
     32600408756ea709398f521dc4a9021940617c5784f503e2c7396841d271f322 registry.ferrumgate.zero/ferrumgate/ui.portal:1.0.0 ferrumgate-ui-1
                 `
                 } else {
-                    if (fs.existsSync('inspect.json'))
-                        return fs.readFileSync('inspect.json').toString();
-                    if (fs.existsSync('data/inspect.json'))
-                        return fs.readFileSync('data/inspect.json').toString();
-                    if (fs.existsSync('test/data/inspect.json'))
-                        return fs.readFileSync('test/data/inspect.json').toString();
+                    if (fs.existsSync('inspect.json.txt'))
+                        return fs.readFileSync('inspect.json.txt').toString();
+                    if (fs.existsSync('data/inspect.json.txt'))
+                        return fs.readFileSync('data/inspect.json.txt').toString();
+                    if (fs.existsSync('test/data/inspect.json.txt'))
+                        return fs.readFileSync('test/data/inspect.json.txt').toString();
 
 
                     return '';
@@ -148,7 +148,7 @@ describe('dockerService', () => {
         expect(containers[0].id).to.equal(`fa366965bd90a1f004592286785b870016510e9e4ca7cfd82b7ea426a37e4c1a`);
         expect(containers[0].image).to.equal(`registry.ferrumgate.zero/ferrumgate/ferrum.io:latest`);
         expect(containers[0].name).to.equal(`test-blabla`);
-        expect(containers[0].details.Config.Labels.Ferrum_Svc_LastUpdate).exist;
+        expect(containers[0].details.FerrumSvcLastUpdate).exist;
 
 
 
@@ -167,12 +167,12 @@ describe('dockerService', () => {
 
             override async executeSpawn(cmd: string): Promise<string> {
 
-                if (fs.existsSync('inspect.json'))
-                    return fs.readFileSync('inspect.json').toString();
-                if (fs.existsSync('data/inspect.json'))
-                    return fs.readFileSync('data/inspect.json').toString();
-                if (fs.existsSync('test/data/inspect.json'))
-                    return fs.readFileSync('test/data/inspect.json').toString();
+                if (fs.existsSync('inspect.json.txt'))
+                    return fs.readFileSync('inspect.json.txt').toString();
+                if (fs.existsSync('data/inspect.json.txt'))
+                    return fs.readFileSync('data/inspect.json.txt').toString();
+                if (fs.existsSync('test/data/inspect.json.txt'))
+                    return fs.readFileSync('test/data/inspect.json.txt').toString();
 
 
                 return '';
@@ -182,8 +182,8 @@ describe('dockerService', () => {
         }
         const docker = new Mock();
         const containers = await docker.inspect('2');
-        expect(containers.length).to.equal(1);
-        expect(containers[0].Config.Labels.Ferrum_Svc_LastUpdate).exist;
+        expect(containers.length).to.equal(3);
+        expect(containers[0].FerrumSvcLastUpdate).exist;
 
 
 
