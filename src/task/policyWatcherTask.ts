@@ -6,6 +6,7 @@ import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
 import fs from 'fs';
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import toml from 'toml';
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculates policy 
@@ -14,10 +15,12 @@ import { BroadcastService } from "rest.portal/service/broadcastService";
 export class PolicyWatcherTask extends GatewayBasedTask {
 
     protected lmdbService!: LmdbService;
-    protected unstableSystem = false;
+
     protected tunnels = new Map();
     protected configChangedTimes: number[] = [];
     protected configChangedTimer: any;
+    protected errorCount = 0;
+    protected errorLastTime = 0;
     constructor(private dbFolder: string, private policyService: PolicyService,
         private redisConfigService: RedisConfigWatchService,
         private bcastEvents: BroadcastService) {
@@ -26,7 +29,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
     }
     async start() {
 
-        this.lmdbService = await LmdbService.open('ferrumgate', this.dbFolder, 'string', 16);
+        this.lmdbService = await LmdbService.open('policy', this.dbFolder, 'string', 24);
         logger.info(`opening policy lmdb folder ${this.dbFolder}`);
         await this.lmdbService.clear();
         this.bcastEvents.on('tunnelExpired', async (tun: Tunnel) => {
@@ -50,19 +53,16 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
-    isStable() {
-        if (this.unstableSystem) throw new Error('unstable policy watcher');
-    }
+
 
     async tunnelExpired(tun: Tunnel) {
         try {
             logger.info(`policy watcher tunnel expired tunId:${tun.id}`)
             this.tunnels.delete(tun.id);
-            this.isStable();
             await this.lmdbClearTunnel(tun);
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -83,7 +83,6 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         try {
             logger.info(`policy watcher tunnel confirmed trackId: ${tun.trackId}`)
             this.tunnels.set(tun.id, tun);
-            this.isStable();
 
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
@@ -108,7 +107,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
 
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.configChangedTimes.push(new Date().getTime());
         }
     }
 
@@ -128,20 +127,20 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             }
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+
         }
     }
 
     async executeConfigChanged() {
         try {
-            this.isStable();
+
             if (!this.configChangedTimes.length) return;
             if ((new Date().getTime() - this.configChangedTimes[0] < 2000)) return;
             logger.info(`policy watcher config changed detected`);
             let removeLength = this.configChangedTimes.length;
             let removeKeys = new Map();
-            for (const iterator of this.tunnels) {
-                const range = await this.lmdbGetTunnel(iterator[1]);
+            for (const tun of this.tunnels.values()) {
+                const range = await this.lmdbGetTunnel(tun);
                 for (const it of range) {
                     removeKeys.set(it.key, 1);
                 }
@@ -149,7 +148,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             const { gateway, network } = await this.getNetworkAndGateway();
             if (!network) {
                 logger.info(`policy watcher network not found`);
-                await this.lmdbService.batch(async () => {
+                await this.lmdbService.transaction(async () => {
                     for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
                     }
@@ -173,7 +172,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
                 for (const iterator of writeList) {//for performance, no need to delete if we will put again
                     removeKeys.delete(iterator[0]);
                 }
-                await this.lmdbService.batch(async () => {
+                await this.lmdbService.transaction(async () => {
                     for (const key of removeKeys.keys()) {
                         await this.lmdbService.remove(key);
                     }
@@ -184,10 +183,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
             }
 
             this.configChangedTimes.splice(0, removeLength);
-
+            this.errorCount = 0;
+            this.errorLastTime = 0;
         } catch (err) {
             logger.error(err);
-            this.unstableSystem = true;
+            this.errorCount++;
+            this.errorLastTime = new Date().getTime();
+
         }
     }
 
@@ -207,9 +209,13 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         await this.lmdbService.put(this.createKey(tun, svc), this.createValue(tun, result, svc))
     }
     async lmdbGetTunnel(tun: Tunnel) {
+
+        const key = this.createKey(tun);
+        return await this.lmdbGetRange(key);
+    }
+    async lmdbGetRange(key: string) {
         const arr = new Uint8Array(255);
         arr.fill(255, 0, 254);
-        const key = this.createKey(tun);
         Buffer.from(key).copy(arr, 0, 0, key.length);
         const range = await this.lmdbService.range({ start: key, end: arr });
         return range;
@@ -218,7 +224,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         logger.info(`policy watcher clearing policy trackId: ${tun.trackId}`)
         const range = await this.lmdbGetTunnel(tun);
         if (range.asArray.length)
-            await this.lmdbService.batch(async () => {
+            await this.lmdbService.transaction(async () => {
                 for (const r of range) {
                     await this.lmdbService.remove(r.key);
                 }

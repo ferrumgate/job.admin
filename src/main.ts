@@ -20,6 +20,8 @@ import { DhcpService } from "rest.portal/service/dhcpService";
 import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
 import { CheckLocalDns } from "./task/checkLocalDns";
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import { TrackWatcherTask } from "./task/trackWatcherTask";
+import { PAuthzWatcherTask } from "./task/pAuthzWatcherTask";
 
 
 
@@ -58,16 +60,28 @@ async function main() {
 
     const inputService = new InputService();
 
-
-    const dbFolder = process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
-    await fs.mkdirSync(dbFolder, { recursive: true });
-    const policyWatcher = new PolicyWatcherTask(dbFolder, policyService, redisConfig, bcastService);
+    const dbFolder = process.env.DB_FOLDER;
+    const policy_dbFolder = dbFolder || process.env.POLICY_DB_FOLDER || '/var/lib/ferrumgate/policy';
+    await fs.mkdirSync(policy_dbFolder, { recursive: true });
+    const policyWatcher = new PolicyWatcherTask(policy_dbFolder, policyService, redisConfig, bcastService);
     await policyWatcher.start();
 
-    const dnsDbFolder = process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns';
+    const dnsDbFolder = dbFolder || process.env.DNS_DB_FOLDER || '/var/lib/ferrumgate/dns';
     await fs.mkdirSync(dnsDbFolder, { recursive: true });
     const localDns = new CheckLocalDns(dnsDbFolder, redisConfig, bcastService, inputService);
     await localDns.start();
+
+
+    const trackDbFolder = dbFolder || process.env.TRACK_DB_FOLDER || '/var/lib/ferrumgate/track';
+    await fs.mkdirSync(trackDbFolder, { recursive: true });
+    const trackWatcher = new TrackWatcherTask(trackDbFolder, redisConfig, bcastService);
+    await trackWatcher.start();
+
+
+    const authzFolder = dbFolder || process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz';
+    await fs.mkdirSync(authzFolder, { recursive: true });
+    const authzWatcher = new PAuthzWatcherTask(authzFolder, redisConfig, bcastService);
+    await authzWatcher.start();
 
 
 
@@ -124,6 +138,8 @@ async function main() {
         await checkServices.stop();
         await redisConfig.stop();
         await localDns.stop();
+        await trackWatcher.stop();
+        await authzWatcher.stop();
 
 
 
