@@ -42,7 +42,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
     const sessionService = new SessionService(redisConfig, redis);
     const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), new ESService(redisConfig));
     const policyService = new PolicyService(redisConfig, ipIntelligenceService);
-    const deviceService = new DeviceService(redisConfig, redis, new ESService(redisConfig));
+    const deviceService = new DeviceService(redisConfig, redis, redis, new ESService(redisConfig));
     const bcastService = new BroadcastService();
     before(async () => {
         await configService.start();

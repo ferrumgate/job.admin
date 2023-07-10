@@ -26,35 +26,49 @@ import { PAuthzWatcherTask } from "./task/pAuthzWatcherTask";
 
 
 
-function createRedis(opt: RedisOptions) {
+function createRedis() {
+    const redisHost = process.env.REDIS_HOST || 'localhost:6379';
+    const redisPassword = process.env.REDIS_PASS;
+    return new RedisService(redisHost, redisPassword);
+}
 
-    return new RedisService(opt.host, opt.password);
+function createRedisLocal() {
+    const redisHost = process.env.REDIS_LOCAL_HOST || 'localhost:6379';
+    const redisPassword = process.env.REDIS_LOCAL_PASS;
+    return new RedisService(redisHost, redisPassword);
+}
+
+function createRedisIntel() {
+    const redisHost = process.env.REDIS_INTEL_HOST || 'localhost:6379';
+    const redisPassword = process.env.REDIS_INTEL_PASS;
+    return new RedisService(redisHost, redisPassword);
 }
 
 async function main() {
 
 
 
-    const redisHost = process.env.REDIS_HOST || 'localhost:6379';
-    const redisPassword = process.env.REDIS_PASS;
+
     const encryptKey = process.env.ENCRYPT_KEY || Util.randomNumberString(32);
     const gatewayId = process.env.GATEWAY_ID || Util.randomNumberString(16);
 
-    const redisOptions: RedisOptions = { host: redisHost, password: redisPassword };
 
 
-    const redis = createRedis(redisOptions);
 
-    const systemLog = new SystemLogService(redis, createRedis(redisOptions), encryptKey, 'job.admin/' + gatewayId);
+    const redis = createRedis();
+    const redisLocal = createRedisLocal();
+    const redisIntel = createRedisIntel();
 
-    const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(redisOptions), systemLog, true, encryptKey, 'job.admin/' + gatewayId);
+    const systemLog = new SystemLogService(redis, createRedis(), encryptKey, 'job.admin/' + gatewayId);
+
+    const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(), systemLog, true, encryptKey, 'job.admin/' + gatewayId);
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
     const bcastService = new BroadcastService();
     const esService = new ESServiceExtended(redisConfig);
     const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), esService);
     const policyService = new PolicyService(redisConfig, ipIntelligenceService);
-    const deviceService = new DeviceService(redisConfig, redis, esService);
+    const deviceService = new DeviceService(redisConfig, redis, redisLocal, esService);
 
     const dockerService = new DockerService();
 
