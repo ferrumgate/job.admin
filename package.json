@@ -1,6 +1,6 @@
 {
   "name": "job.admin",
-  "version": "1.11.0",
+  "version": "1.12.0",
   "description": "manages machine network",
   "main": "index.js",
   "scripts": {
@@ -16,7 +16,7 @@
     "url": "git+ssh://git@gitlab.com/ferrumgate/job.admin.git"
   },
   "publishConfig": {
-    "tag": "rest.portal@1.11.0"
+    "tag": "rest.portal@1.13.0"
   },
   "author": "",
   "license": "ISC",
