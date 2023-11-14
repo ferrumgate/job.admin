@@ -82,7 +82,24 @@ describe('checkLocalDns', () => {
 
         }
 
-        return { gateway, network, service };
+        let service2: Service = {
+            id: Util.randomNumberString(),
+            name: 'dns-dev',
+            isEnabled: true,
+            labels: [],
+            protocol: 'dns',
+            hosts: [{ host: '1.2.3.4' }],
+            networkId: network.id,
+            ports: [{ port: 3306, isTcp: true }],
+            assignedIp: '192.168.0.1',
+            insertDate: new Date().toISOString(),
+            updateDate: new Date().toISOString(),
+            count: 1,
+            dnsAliases: [{ fqdn: 'www.ferrumgate.com', ip: '1.2.3.4' }, { fqdn: 'www.ferrumgate2.com', ip: '2' }]
+
+        }
+
+        return { gateway, network, service, service2 };
     }
     class MockConfig extends RedisConfigWatchService {
         /**
@@ -134,6 +151,38 @@ describe('checkLocalDns', () => {
         const key = `/local/dns/${service.name}.${network.name}.test.zero/a`;
         const value = await lmdb.get(key);
         expect(value).to.equal(service.assignedIp);
+        await lmdb.close();
+    }).timeout(60000)
+
+    it('checkServices dns alias', async () => {
+
+        const { gateway, network, service, service2 } = await createSampleData();
+        const lmdb = await LmdbService.open('dns', tmpfolder, 'string', 3);
+
+        const config = new MockConfig();
+        const bcast = new BroadcastService();
+
+        const localDns = new CheckLocalDns(tmpfolder, config, bcast, new InputService());
+
+        const spyServices = chai.spy.on(config, 'getServicesAll', () => [service2]);
+        const networks = chai.spy.on(config, 'getNetworksAll', () => [network]);
+        const domain = chai.spy.on(config, 'getDomain', () => 'test.zero');
+
+        await localDns.checkServices();
+        const key = `/local/dns/${service2.name}.${network.name}.test.zero/a`;
+        const value = await lmdb.get(key);
+        expect(value).to.equal(service2.assignedIp);
+        if (service2.dnsAliases) {
+            const key2 = `/local/dns/${service2.dnsAliases[0].fqdn}/a`;
+            const value2 = await lmdb.get(key2);
+            expect(value2).to.equal(service2.dnsAliases[0].ip);
+
+            const key3 = `/local/dns/${service2.dnsAliases[1].fqdn}/a`;
+            const value3 = await lmdb.get(key3);
+            expect(value3).not.exist;
+        }
+
+
         await lmdb.close();
     }).timeout(60000)
 
