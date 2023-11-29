@@ -95,7 +95,7 @@ describe('checkLocalDns', () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1,
-            dnsAliases: [{ fqdn: 'www.ferrumgate.com', ip: '1.2.3.4' }, { fqdn: 'www.ferrumgate2.com', ip: '2' }]
+            aliases: [{ host: 'www.ferrumgate.com' }, { host: 'www.ferrumgate2.com' }]
 
         }
 
@@ -146,11 +146,23 @@ describe('checkLocalDns', () => {
         const spyServices = chai.spy.on(config, 'getServicesAll', () => [service]);
         const networks = chai.spy.on(config, 'getNetworksAll', () => [network]);
         const domain = chai.spy.on(config, 'getDomain', () => 'test.zero');
+        const dnsRecords = chai.spy.on(config, 'getDnsRecords', () => [{
+            id: Util.randomNumberString(),
+            fqdn: 'test.ferrumote.com',
+            ip: '1.2.3.4',
+            isEnabled: true
+        }]);
+        const gateway2 = chai.spy.on(config, 'getGateway', () => gateway);
 
         await localDns.checkServices();
         const key = `/local/dns/${service.name}.${network.name}.test.zero/a`;
         const value = await lmdb.get(key);
         expect(value).to.equal(service.assignedIp);
+        //global
+        const key2 = `/local/dns/test.ferrumote.com/a`;
+        const value2 = await lmdb.get(key2);
+        expect(value2).to.equal(`1.2.3.4`);
+
         await lmdb.close();
     }).timeout(60000)
 
@@ -167,19 +179,23 @@ describe('checkLocalDns', () => {
         const spyServices = chai.spy.on(config, 'getServicesAll', () => [service2]);
         const networks = chai.spy.on(config, 'getNetworksAll', () => [network]);
         const domain = chai.spy.on(config, 'getDomain', () => 'test.zero');
+        const dnsRecords = chai.spy.on(config, 'getDnsRecords', () => []);
+        const gateway2 = chai.spy.on(config, 'getGateway', () => gateway);
+
+
 
         await localDns.checkServices();
         const key = `/local/dns/${service2.name}.${network.name}.test.zero/a`;
         const value = await lmdb.get(key);
         expect(value).to.equal(service2.assignedIp);
-        if (service2.dnsAliases) {
-            const key2 = `/local/dns/${service2.dnsAliases[0].fqdn}/a`;
+        if (service2.aliases) {
+            const key2 = `/local/dns/${service2.aliases[0].host}/a`;
             const value2 = await lmdb.get(key2);
-            expect(value2).to.equal(service2.dnsAliases[0].ip);
+            expect(value2).to.equal(service2.assignedIp);
 
-            const key3 = `/local/dns/${service2.dnsAliases[1].fqdn}/a`;
+            const key3 = `/local/dns/${service2.aliases[1].host}/a`;
             const value3 = await lmdb.get(key3);
-            expect(value3).not.exist;
+            expect(value3).exist;
         }
 
 
@@ -200,6 +216,9 @@ describe('checkLocalDns', () => {
         const spyServices = chai.spy.on(config, 'getServicesAll', () => [service]);
         const networks = chai.spy.on(config, 'getNetworksAll', () => [network]);
         const domain = chai.spy.on(config, 'getDomain', () => 'test.zero');
+        const dnsRecords = chai.spy.on(config, 'getDnsRecords', () => []);
+        const gateway2 = chai.spy.on(config, 'getGateway', () => gateway);
+
         await localDns.checkServices();
 
         const key = `/local/dns/${service.name}.${network.name}.test.zero/a`;

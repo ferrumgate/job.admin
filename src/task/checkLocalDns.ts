@@ -88,8 +88,12 @@ export class CheckLocalDns extends GatewayBasedTask {
                 .filter(y => y.aliases)
                 .flatMap(k => {
                     return k.aliases?.map(t => {
+                        let host = t.host;
+                        if (!host.includes('.')) {
+                            host = `${host}.${currentNetwork?.name}.${domain}`.toLowerCase();
+                        }
                         return {
-                            host: t.host, ip: k.assignedIp
+                            host: host, ip: k.assignedIp
                         }
                     })
                 }).map(y => {
@@ -114,6 +118,7 @@ export class CheckLocalDns extends GatewayBasedTask {
             const dnsAliases = defaultDnsRecords.filter(x => x.isEnabled).map(alias => {
 
                 if (alias && alias.fqdn && alias.ip && isIPv4(alias.ip)) {
+
                     const fqdn = alias.fqdn.toLowerCase();
                     return {
                         fqdn: fqdn,
@@ -127,7 +132,7 @@ export class CheckLocalDns extends GatewayBasedTask {
             }
             ).filter(x => x);
 
-
+            let checkList: string[] = [];
             await this.lmdbService.transaction(async () => {
                 await this.lmdbService.clear();
                 for (const dns of dnsRecords) {
@@ -136,6 +141,7 @@ export class CheckLocalDns extends GatewayBasedTask {
                         const val = dns.ipv4;
                         await this.lmdbService.put(key, val);
                         logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
                         //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
                     }
                 }
@@ -145,6 +151,7 @@ export class CheckLocalDns extends GatewayBasedTask {
                         const val = dns.ipv4;
                         await this.lmdbService.put(key, val);
                         logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
                         //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
                     }
                 }
@@ -155,19 +162,17 @@ export class CheckLocalDns extends GatewayBasedTask {
                         const val = dns.ipv4;
                         await this.lmdbService.put(key, val);
                         logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
                         //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
                     }
                 }
             })
             // write more log
-            for (const dns of dnsRecords) {
-                if (dns && dns.fqdn) {
-                    const key = `/local/dns/${dns.fqdn}/a`;
-                    const val = dns.ipv4;
-                    const result = await this.lmdbService.get(key);//check again
-                    logger.info(`read local dns ${key} -> ${result}`);
+            for (const fqdn of checkList) {
 
-                }
+                const key = `/local/dns/${fqdn}/a`;
+                const result = await this.lmdbService.get(key);//check again
+                logger.info(`read local dns ${key} -> ${result}`);
             }
             this.confChangedTimes = [];
 
