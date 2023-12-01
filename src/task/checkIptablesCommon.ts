@@ -18,7 +18,8 @@ export class CheckIptablesCommon extends GatewayBasedTask {
 
     protected timer: any | null = null;
 
-    constructor(protected configService: RedisConfigWatchService, protected bcastService: BroadcastService) {
+    constructor(protected configService: RedisConfigWatchService,
+        protected bcastService: BroadcastService) {
         super();
         this.bcastService.on('configChanged', async (evt: ConfigWatch<any>) => {
             await this.onConfigChanged(evt);

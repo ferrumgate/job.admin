@@ -9,6 +9,7 @@ import { RedisConfigWatchService } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
 import { LmdbService } from "../service/lmdbService";
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import { isIPv4 } from "net";
 
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
@@ -17,7 +18,7 @@ const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
  */
 
 
-export class CheckLocalDns {
+export class CheckLocalDns extends GatewayBasedTask {
 
 
     protected timerCheck: any | null = null;
@@ -28,6 +29,7 @@ export class CheckLocalDns {
     constructor(private dbFolder: string, private configService: RedisConfigWatchService,
         protected bcastService: BroadcastService,
         protected inputService: InputService) {
+        super();
         this.bcastService.on('configChanged', (evt: ConfigWatch<any>) => {
             this.onConfigChanged(evt);
         })
@@ -52,12 +54,17 @@ export class CheckLocalDns {
             const services = await this.configService.getServicesAll();
             const networks = await this.configService.getNetworksAll();
             const domain = await this.configService.getDomain();
+            const defaultDnsRecords = await this.configService.getDnsRecords();
+            const gateway = await this.configService.getGateway(this.gatewayId);
+            const currentNetwork = networks.find(x => x.id == gateway?.networkId);
 
 
+            //this works like this, when connected to multiple networks
+            // we need to resolve it
             const dnsRecords = services.map(x => {
                 const network = networks.find(y => y.id == x.networkId);
                 if (network) {
-                    const fqdn = `${x.name}.${network.name}.${domain}`;
+                    const fqdn = `${x.name}.${network.name}.${domain}`.toLowerCase();
                     if (!this.inputService.checkDomain(fqdn, false)) {
                         logger.warn(`dns fqdn is not valid: ${fqdn}`)
                         return null;
@@ -74,6 +81,58 @@ export class CheckLocalDns {
                 }
             }).filter(x => x);
 
+
+
+            const serviceAliasRecords = services
+                .filter(x => x.networkId == currentNetwork?.id)
+                .filter(y => y.aliases)
+                .flatMap(k => {
+                    return k.aliases?.map(t => {
+                        let host = t.host;
+                        if (!host.includes('.')) {
+                            host = `${host}.${currentNetwork?.name}.${domain}`.toLowerCase();
+                        }
+                        return {
+                            host: host, ip: k.assignedIp
+                        }
+                    })
+                }).map(y => {
+                    if (!y) return null;
+                    const fqdn = y.host.toLowerCase();
+                    if (!this.inputService.checkDomain(fqdn, false)) {
+                        logger.warn(`dns fqdn is not valid: ${fqdn}`)
+                        return null;
+                    }
+                    return {
+                        fqdn: fqdn,
+                        fqdnReverse: fqdn.split('.').reverse().join('.'),
+                        ipv4: y.ip
+                    };
+
+                })
+
+
+
+
+
+            const dnsAliases = defaultDnsRecords.filter(x => x.isEnabled).map(alias => {
+
+                if (alias && alias.fqdn && alias.ip && isIPv4(alias.ip)) {
+
+                    const fqdn = alias.fqdn.toLowerCase();
+                    return {
+                        fqdn: fqdn,
+                        fqdnReverse: fqdn.split('.').reverse().join('.'),
+                        ipv4: alias.ip
+
+                    };
+
+                } else return null;
+
+            }
+            ).filter(x => x);
+
+            let checkList: string[] = [];
             await this.lmdbService.transaction(async () => {
                 await this.lmdbService.clear();
                 for (const dns of dnsRecords) {
@@ -82,19 +141,38 @@ export class CheckLocalDns {
                         const val = dns.ipv4;
                         await this.lmdbService.put(key, val);
                         logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
+                        //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
+                    }
+                }
+                for (const dns of serviceAliasRecords) {
+                    if (dns && dns.fqdn && dns.ipv4) {
+                        const key = `/local/dns/${dns.fqdn}/a`;
+                        const val = dns.ipv4;
+                        await this.lmdbService.put(key, val);
+                        logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
+                        //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
+                    }
+                }
+
+                for (const dns of dnsAliases) {
+                    if (dns && dns.fqdn && dns.ipv4) {
+                        const key = `/local/dns/${dns.fqdn}/a`;
+                        const val = dns.ipv4;
+                        await this.lmdbService.put(key, val);
+                        logger.debug(`write local dns ${key} -> ${val}`);
+                        checkList.push(dns.fqdn);
                         //await this.lmdbService.put(`/local/dns/${dns.fqdnReverse}/a`, dns.ipv4);
                     }
                 }
             })
             // write more log
-            for (const dns of dnsRecords) {
-                if (dns && dns.fqdn) {
-                    const key = `/local/dns/${dns.fqdn}/a`;
-                    const val = dns.ipv4;
-                    const result = await this.lmdbService.get(key);//check again
-                    logger.info(`read local dns ${key} -> ${result}`);
+            for (const fqdn of checkList) {
 
-                }
+                const key = `/local/dns/${fqdn}/a`;
+                const result = await this.lmdbService.get(key);//check again
+                logger.info(`read local dns ${key} -> ${result}`);
             }
             this.confChangedTimes = [];
 
@@ -114,6 +192,9 @@ export class CheckLocalDns {
             }
             if (event.path.startsWith('/config/services') || event.path.startsWith('/config/networks')) {
 
+                this.confChangedTimes.push(new Date().getTime());
+            }
+            if (event.path.startsWith('/config/dns/records')) {
                 this.confChangedTimes.push(new Date().getTime());
             }
 
