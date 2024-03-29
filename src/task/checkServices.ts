@@ -1,15 +1,10 @@
-
-
-import { GatewayBasedTask } from "./gatewayBasedTask";
-import { NetworkService } from "../service/networkService";
-import { DockerService, Pod } from "../service/dockerService";
-import { logger, RedisService, Service } from "rest.portal";
-import { RedisOptions } from "../model/redisOptions";
-import { RedisConfigWatchService } from "rest.portal";
+import { RedisConfigWatchService, Service, logger } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
 import { BroadcastService } from "rest.portal/service/broadcastService";
-
+import { DockerService, Pod } from "../service/dockerService";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  *@summary we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
@@ -20,7 +15,6 @@ export interface ServiceEx extends Service {
 }
 
 export class CheckServices extends GatewayBasedTask {
-
 
     protected timerCheck: any | null = null;
 
@@ -34,7 +28,6 @@ export class CheckServices extends GatewayBasedTask {
         })
         this.confChangedTimes.push(1);
 
-
     }
 
     public async closeAllServices() {
@@ -47,7 +40,6 @@ export class CheckServices extends GatewayBasedTask {
     public async closeService(pod: Pod) {
         await this.dockerService.stop(pod);
     }
-
 
     public async checkServices() {
 
@@ -120,7 +112,6 @@ export class CheckServices extends GatewayBasedTask {
                     await this.dockerService.stopIgnoreException(run);
                     stopedList.push(run);
 
-
                 } else
                     if (service.updateDate != svc.lastUpdate) {
                         logger.warn(`closing pod ${run.name} restart needs, update:${service?.updateDate}!=${svc.lastUpdate}`);
@@ -173,8 +164,6 @@ export class CheckServices extends GatewayBasedTask {
             }
         }
 
-
-
     }
 
     public async onConfigChanged(event: ConfigWatch<any>) {
@@ -192,9 +181,6 @@ export class CheckServices extends GatewayBasedTask {
             logger.error(err);
         }
     }
-
-
-
 
     public override async start(): Promise<void> {
         try {
@@ -218,7 +204,6 @@ export class CheckServices extends GatewayBasedTask {
             if (this.timerCheck)
                 clearIntervalAsync(this.timerCheck);
             this.timerCheck = null;
-
 
         } catch (err) {
             logger.error(err);

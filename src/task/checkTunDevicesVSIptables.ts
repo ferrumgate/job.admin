@@ -1,14 +1,12 @@
-import { GatewayBasedTask } from "./gatewayBasedTask";
+import { logger } from "rest.portal";
 import { NetworkService } from "../service/networkService";
-
-import { logger, RedisService } from "rest.portal";
-import { RedisOptions } from "../model/redisOptions";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  * @summary after a tun device created, we added a new iptables rule
  * for security remove this rule if device not exits
  */
-
 export class CheckTunDevicesVSIptables extends GatewayBasedTask {
 
     protected timer: any | null = null;
@@ -16,7 +14,6 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
     constructor() {
         super();
     }
-
 
     public async check() {
 
@@ -46,7 +43,6 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
                     }
                 }
 
-
                 const rulesOutput = await NetworkService.getMangleOutputTableDeviceRules();
                 for (const rule of rulesOutput) {
                     const device = devices.find(x => x == rule.name);
@@ -73,7 +69,6 @@ export class CheckTunDevicesVSIptables extends GatewayBasedTask {
             logger.error(err);
         }
     }
-
 
     public override async start(): Promise<void> {
 

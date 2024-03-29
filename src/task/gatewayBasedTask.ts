@@ -1,5 +1,4 @@
 import { BaseTask } from "./baseTask";
-import fspromise from 'fs/promises';
 
 /**
  * @summary a base class that supports gatewayId

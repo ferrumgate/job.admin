@@ -1,22 +1,14 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-
-import { CheckTunDevicesVSRedis } from '../src/task/checkTunDevicesVSRedis';
-import { RedisService, Util } from 'rest.portal';
-import { RedisOptions } from '../src/model/redisOptions';
 import chaiSpy from 'chai-spies';
+import { RedisService } from 'rest.portal';
 import { NetworkService } from '../src/service/networkService';
 import { TunService } from '../src/service/tunService';
-
+import { CheckTunDevicesVSRedis } from '../src/task/checkTunDevicesVSRedis';
 
 chai.use(chaiHttp);
 chai.use(chaiSpy);
 const expect = chai.expect;
-
 
 describe('checkTunDevicesVSRedis', () => {
     beforeEach(async () => {
@@ -40,7 +32,6 @@ describe('checkTunDevicesVSRedis', () => {
                 return this.tunnelKeysForTryAgain;
             }
 
-
         }
 
         let deleteExecuted = false;
@@ -52,11 +43,9 @@ describe('checkTunDevicesVSRedis', () => {
 
         })
 
-
         // insert some data to redis
         const simpleRedis = new RedisService('localhost:6379,localhost:6390');
         await simpleRedis.set(`/gateway/myhost123/tun/ferrum1`, 1);
-
 
         const checker = new Mock(simpleRedis);
         const spyCache = chai.spy.on(checker.getCache(), 'has', () => true);
@@ -68,9 +57,6 @@ describe('checkTunDevicesVSRedis', () => {
         expect(spyCache).to.have.been.called;
         expect(spyCache2).to.have.been.called;
 
-
     }).timeout(100000)
-
-
 
 })

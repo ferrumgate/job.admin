@@ -1,19 +1,14 @@
-import { GatewayBasedTask } from "./gatewayBasedTask";
-import { NetworkService } from "../service/networkService";
-import { logger, Network, RedisService } from "rest.portal";
-import { RedisOptions } from "../model/redisOptions";
-import { RedisConfigWatchService } from "rest.portal";
-
-
-import { Gateway } from "rest.portal";
+import { logger, RedisConfigWatchService } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import { NetworkService } from "../service/networkService";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  * @summary check common rules in iptables
  */
-
 export class CheckIptablesCommon extends GatewayBasedTask {
 
     protected timer: any | null = null;
@@ -91,7 +86,6 @@ export class CheckIptablesCommon extends GatewayBasedTask {
         }
     }
 
-
     public override async start(): Promise<void> {
 
         await this.check();
@@ -105,11 +99,9 @@ export class CheckIptablesCommon extends GatewayBasedTask {
                 clearIntervalAsync(this.timer);
             this.timer = null;
 
-
         } catch (err) {
             logger.error(err);
         } finally {
-
 
         }
     }

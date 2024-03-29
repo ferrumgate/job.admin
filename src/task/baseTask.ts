@@ -1,4 +1,3 @@
-
 /**
  * @summary base task interface
  */

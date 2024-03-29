@@ -1,19 +1,10 @@
-import { HelperService, logger, RedisConfigWatchService, RedisService, RedisServiceManuel, SystemLog, Tunnel, Util } from "rest.portal";
-
-import { RedisOptions } from "../model/redisOptions";
-import { GatewayBasedTask } from "./gatewayBasedTask";
-import { EventEmitter } from "node:events";
 import NodeCache from "node-cache";
-import { TunnelService } from "rest.portal";
-import { WatchItem } from "rest.portal/service/watchService";
-import { PolicyService } from "rest.portal";
+import { logger, RedisConfigWatchService, RedisService, SystemLog, Tunnel, TunnelService } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
 import { BroadcastService } from "rest.portal/service/broadcastService";
-
-
-
+import { WatchItem } from "rest.portal/service/watchService";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
-
 
 /**
  * @summary follow all system status, tunnels, configs and emit related events to system
@@ -56,7 +47,6 @@ export class SystemWatcherTask extends GatewayBasedTask {
             this.bcastService.emit('configChanged', data);
             logger.info(`system watcher config changed ${data.path}`);
         })
-
 
     }
 
@@ -137,9 +127,5 @@ export class SystemWatcherTask extends GatewayBasedTask {
             logger.error(err);
         }
     }
-
-
-
-
 
 }
