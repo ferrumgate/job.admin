@@ -1,6 +1,6 @@
 {
   "name": "job.admin",
-  "version": "1.14.0",
+  "version": "1.15.0",
   "description": "manages machine network",
   "main": "index.js",
   "scripts": {
@@ -26,6 +26,7 @@
   "homepage": "https://gitlab.com/ferrumgate/job.admin#readme",
   "dependencies": {
     "@peculiar/webcrypto": "^1.4.5",
+    "axios": "^1.6.8",
     "decompress": "^4.2.1",
     "decompress-tar": "^4.1.1",
     "decompress-tarbz2": "^4.1.1",
@@ -58,6 +59,7 @@
     "@types/node": "^20.11.30",
     "@types/ping": "^0.4.4",
     "@types/set-interval-async": "^1.0.3",
+    "axios-mock-adapter": "^1.22.0",
     "chai": "^4.3.7",
     "chai-http": "^4.4.0",
     "chai-spies": "^1.1.0",
