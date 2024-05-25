@@ -16,13 +16,11 @@ import { SystemWatcherTask } from "./task/systemWatcherTask";
 import { TrackWatcherTask } from "./task/trackWatcherTask";
 import { WhenClientAuthenticated } from "./task/whenClientAuthenticated";
 import { WhenTunnelClosed } from "./task/whenTunnelClosed";
-import { NodeSave } from './task/node/nodeSave';
-import { NodeCloudIAmAlive } from './task/node/nodeCloudIAmAlive';
-import { NodeIAmAlive } from './task/node/nodeIAmAlive';
 
 function createRedis() {
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
+    logger.info(`redis host: ${redisHost}`)
     return new RedisService(redisHost, redisPassword);
 }
 
@@ -152,64 +150,10 @@ async function main() {
 
 }
 
-async function main_node() {
 
-    const encryptKey = process.env.ENCRYPT_KEY || Util.randomNumberString(32);
-    const gatewayId = process.env.GATEWAY_ID || Util.randomNumberString(16);
-    const nodeId = process.env.NODE_ID || Util.randomNumberString(16);
-
-    const redis = createRedis();
-    const redisLocal = createRedisLocal();
-    const redisIntel = createRedisIntel();
-
-    const systemLog = new SystemLogService(redis, createRedis(), encryptKey, 'job.admin/' + nodeId);
-
-    const redisConfig = new RedisConfigWatchCachedService(redis, createRedis(), systemLog, true, encryptKey, 'job.admin/' + gatewayId);
-
-    const nodeCloud = new NodeCloudIAmAlive();
-    await nodeCloud.start();
-
-    const nodeSave = new NodeSave(redis, createRedis(), systemLog);
-    await nodeSave.start();
-
-    const nodeAlive = new NodeIAmAlive(redis);
-    await nodeAlive.start();
-
-    async function stopEverything() {
-        await nodeCloud.stop();
-        await nodeSave.stop();
-        await nodeAlive.stop();
-        await redisConfig.stop();
-    }
-
-    process.on('SIGINT', async () => {
-
-        await stopEverything();
-        process.exit(0);
-
-    });
-    process.on('SIGTERM', async () => {
-
-        await stopEverything();
-        process.exit(0);
-
-    });
-
-
-}
 // start process
-
-if (process.env.MODE = 'node') {
-    main_node()
-        .catch(err => {
-            logger.error(err);
-            process.exit(1);
-        })
-} else {
-    //gateway mode
-    main()
-        .catch(err => {
-            logger.error(err);
-            process.exit(1);
-        })
-}
+main()
+    .catch(err => {
+        logger.error(err);
+        process.exit(1);
+    })

@@ -27,6 +27,7 @@ export class IAmAlive extends GatewayBasedTask {
             const trx = await this.redis.multi();
             await trx.hset(hostkey, {
                 id: this.gatewayId,
+                nodeId: this.nodeId,
                 arch: os.arch(),
                 cpusCount: os.cpus().length,
                 cpuInfo: os.cpus().find(x => x)?.model,

@@ -6,6 +6,7 @@ import { BaseTask } from "./baseTask";
 export abstract class GatewayBasedTask extends BaseTask {
 
     protected gatewayId = process.env.GATEWAY_ID || '';
+    protected nodeId = process.env.NODE_ID || '';
     /**
      *
      */
