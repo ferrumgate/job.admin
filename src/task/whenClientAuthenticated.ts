@@ -1,12 +1,7 @@
-/// when client connected execute this task
+import { logger, Tunnel } from "rest.portal";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 import { NetworkService } from "../service/networkService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
-
-import { HelperService, logger, RedisService, Tunnel } from "rest.portal";
-import { RedisOptions } from "../model/redisOptions";
-import { BroadcastService } from "rest.portal/service/broadcastService";
-
-
 
 /**
  * @summary when a client authenticated, a new interface created, and system informs that, this interface created with some parameters
@@ -17,9 +12,6 @@ export class WhenClientAuthenticated extends GatewayBasedTask {
     constructor(private bcastService: BroadcastService) {
         super();
     }
-
-
-
 
     async onMessage(tunnel: Tunnel) {
 
@@ -37,13 +29,11 @@ export class WhenClientAuthenticated extends GatewayBasedTask {
                 this.bcastService.emit('tunnelConfirm', tunnel);
             }
 
-
         } catch (err) {
             logger.error(err);
         } finally {
 
         }
-
 
     }
     async start(): Promise<void> {
@@ -59,9 +49,7 @@ export class WhenClientAuthenticated extends GatewayBasedTask {
         }
     }
 
-
     async stop(): Promise<void> {
-
 
     }
 

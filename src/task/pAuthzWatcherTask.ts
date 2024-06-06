@@ -1,13 +1,9 @@
-import { AuthorizationRule, Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchService, Service, Tunnel, User } from "rest.portal";
+import { AuthorizationRule, logger, RedisConfigWatchService, Service, Tunnel } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
-import { PolicyAuthzResult } from "rest.portal/service/policyService";
+import { BroadcastService } from "rest.portal/service/broadcastService";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
-import fs from 'fs';
-import { BroadcastService } from "rest.portal/service/broadcastService";
-import toml from 'toml';
-import { AuthorizationProfile } from "rest.portal/model/authorizationProfile";
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculate all tunnel data for service 
@@ -50,10 +46,6 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
-
-
-
-
 
     async configChanged(data: ConfigWatch<any>) {
         try {
@@ -130,14 +122,12 @@ export class PAuthzWatcherTask extends GatewayBasedTask {
         return `/authz/id/${rule.id}/updateTime`
     }
 
-
     createServiceKey(svc: Service) {
         return `/authz/service/id/${svc.id}/user/list`
     }
     createServiceUpdateTimeKey(svc: Service) {
         return `/authz/service/id/${svc.id}/user/list/updateTime`
     }
-
 
     createServiceValue(rules: AuthorizationRule[]) {
         let data = ``;
@@ -155,7 +145,6 @@ id = "${rule.id}"
         }
         return data;
     }
-
 
     createAuthzValue(rule: AuthorizationRule) {
         let fqdnIntelStr = ''
@@ -183,10 +172,6 @@ ${fqdnIntelStr || ''}
         return data;
     }
 
-
-
-
-
     async lmdbGetRange(key: string) {
         const arr = new Uint8Array(255);
         arr.fill(255, 0, 254);
@@ -206,6 +191,5 @@ ${fqdnIntelStr || ''}
                 }
             })
     }
-
 
 }

@@ -1,21 +1,12 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { InputService, RedisService, SystemLogService } from 'rest.portal';
-import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
-import { RedisOptions } from '../src/model/redisOptions';
-import { DockerService } from '../src/service/dockerService';
-import { CheckServices } from '../src/task/checkServices';
-import fs from 'fs';
-import { LmdbService } from '../src/service/lmdbService';
-import { CheckLocalDns } from '../src/task/checkLocalDns';
 import chaiSpy from 'chai-spies';
+import fs from 'fs';
+import { Gateway, InputService, Network, RedisConfigWatchService, RedisService, Service, SystemLogService, Util } from 'rest.portal';
 import { ConfigWatch } from 'rest.portal/model/config';
 import { BroadcastService } from 'rest.portal/service/broadcastService';
-
+import { LmdbService } from '../src/service/lmdbService';
+import { CheckLocalDns } from '../src/task/checkLocalDns';
 
 chai.use(chaiHttp);
 chai.use(chaiSpy);
@@ -40,9 +31,7 @@ describe('checkLocalDns', () => {
         chai.spy.restore();
     })
 
-
     async function createSampleData() {
-
 
         let network: Network = {
             id: '6hiryy8ujv3n',
@@ -54,7 +43,6 @@ describe('checkLocalDns', () => {
             updateDate: new Date().toISOString()
         };
 
-
         let gateway: Gateway = {
             id: '231a0932',
             name: 'myserver',
@@ -64,8 +52,6 @@ describe('checkLocalDns', () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         }
-
-
 
         let service: Service = {
             id: Util.randomNumberString(),
@@ -182,8 +168,6 @@ describe('checkLocalDns', () => {
         const dnsRecords = chai.spy.on(config, 'getDnsRecords', () => []);
         const gateway2 = chai.spy.on(config, 'getGateway', () => gateway);
 
-
-
         await localDns.checkServices();
         const key = `/local/dns/${service2.name}.${network.name}.test.zero/a`;
         const value = await lmdb.get(key);
@@ -197,7 +181,6 @@ describe('checkLocalDns', () => {
             const value3 = await lmdb.get(key3);
             expect(value3).exist;
         }
-
 
         await lmdb.close();
     }).timeout(60000)
@@ -225,18 +208,10 @@ describe('checkLocalDns', () => {
         const value = await lmdb.get(key);
         expect(value).to.equal(service.assignedIp);
 
-
         await localDns.onConfigChanged({ path: '/config/flush' } as ConfigWatch<any>);
         expect(clearAll).have.been.called;
 
-
-
-
-
         await lmdb.close();
     }).timeout(60000)
-
-
-
 
 })
