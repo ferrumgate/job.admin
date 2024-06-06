@@ -1,5 +1,4 @@
 import { BaseTask } from "./baseTask";
-import fspromise from 'fs/promises';
 
 /**
  * @summary a base class that supports gatewayId
@@ -7,6 +6,7 @@ import fspromise from 'fs/promises';
 export abstract class GatewayBasedTask extends BaseTask {
 
     protected gatewayId = process.env.GATEWAY_ID || '';
+    protected nodeId = process.env.NODE_ID || '';
     /**
      *
      */

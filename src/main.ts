@@ -1,34 +1,26 @@
-
-import { ConfigService, DeviceService, ESService, ESServiceExtended, InputService, IpIntelligenceService, RedisConfigService, RedisConfigWatchCachedService, SessionService, TunnelService } from "rest.portal";
-import { PolicyService, SystemLogService } from "rest.portal";
-import { logger, RedisConfigWatchService, RedisService, Util } from "rest.portal";
-import { RedisOptions } from "./model/redisOptions";
+import fs from 'fs';
+import { DeviceService, ESServiceExtended, InputService, IpIntelligenceService, PolicyService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, Util, logger } from "rest.portal";
+import { BroadcastService } from "rest.portal/service/broadcastService";
+import { DhcpService } from "rest.portal/service/dhcpService";
 import { DockerService } from "./service/dockerService";
-import { NetworkService } from "./service/networkService";
-import { SystemWatcherTask } from "./task/systemWatcherTask";
 import { CheckIptablesCommon } from "./task/checkIptablesCommon";
-
+import { CheckLocalDns } from "./task/checkLocalDns";
 import { CheckServices } from "./task/checkServices";
 import { CheckTunDevicesVSIptables } from "./task/checkTunDevicesVSIptables";
+import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
 import { CheckTunDevicesVSRedis } from "./task/checkTunDevicesVSRedis";
 import { IAmAlive } from "./task/iAmAlive";
+import { PAuthzWatcherTask } from "./task/pAuthzWatcherTask";
+import { PolicyWatcherTask } from "./task/policyWatcherTask";
+import { SystemWatcherTask } from "./task/systemWatcherTask";
+import { TrackWatcherTask } from "./task/trackWatcherTask";
 import { WhenClientAuthenticated } from "./task/whenClientAuthenticated";
 import { WhenTunnelClosed } from "./task/whenTunnelClosed";
-import { PolicyWatcherTask } from "./task/policyWatcherTask";
-import fs from 'fs';
-import { DhcpService } from "rest.portal/service/dhcpService";
-import { CheckTunDevicesPolicyAuthn } from "./task/checkTunDevicesVSPolicyAuthn";
-import { CheckLocalDns } from "./task/checkLocalDns";
-import { BroadcastService } from "rest.portal/service/broadcastService";
-import { TrackWatcherTask } from "./task/trackWatcherTask";
-import { PAuthzWatcherTask } from "./task/pAuthzWatcherTask";
-
-
-
 
 function createRedis() {
     const redisHost = process.env.REDIS_HOST || 'localhost:6379';
     const redisPassword = process.env.REDIS_PASS;
+    logger.info(`redis host: ${redisHost}`)
     return new RedisService(redisHost, redisPassword);
 }
 
@@ -46,14 +38,8 @@ function createRedisIntel() {
 
 async function main() {
 
-
-
-
     const encryptKey = process.env.ENCRYPT_KEY || Util.randomNumberString(32);
     const gatewayId = process.env.GATEWAY_ID || Util.randomNumberString(16);
-
-
-
 
     const redis = createRedis();
     const redisLocal = createRedisLocal();
@@ -85,19 +71,15 @@ async function main() {
     const localDns = new CheckLocalDns(dnsDbFolder, redisConfig, bcastService, inputService);
     await localDns.start();
 
-
     const trackDbFolder = dbFolder || process.env.TRACK_DB_FOLDER || '/var/lib/ferrumgate/track';
     await fs.mkdirSync(trackDbFolder, { recursive: true });
     const trackWatcher = new TrackWatcherTask(trackDbFolder, redisConfig, bcastService);
     await trackWatcher.start();
 
-
     const authzFolder = dbFolder || process.env.AUTHZ_DB_FOLDER || '/var/lib/ferrumgate/authz';
     await fs.mkdirSync(authzFolder, { recursive: true });
     const authzWatcher = new PAuthzWatcherTask(authzFolder, redisConfig, bcastService);
     await authzWatcher.start();
-
-
 
     // i am alive
     const iAmAlive = new IAmAlive(redis);
@@ -106,8 +88,6 @@ async function main() {
     // client authenticated task
     const whenClientAuthenticated = new WhenClientAuthenticated(bcastService);
     await whenClientAuthenticated.start();
-
-
 
     // check common iptables rules
     const commonIptables = new CheckIptablesCommon(redisConfig, bcastService);
@@ -134,8 +114,6 @@ async function main() {
         redisConfig, tunnelService, sessionService, policyService, deviceService);
     await checkTunVSPolicyAuthn.start();
 
-
-
     //follow system
     const systemWatcher = new SystemWatcherTask(redis, redisConfig, tunnelService,
         bcastService);
@@ -155,8 +133,6 @@ async function main() {
         await trackWatcher.stop();
         await authzWatcher.stop();
 
-
-
     }
 
     process.on('SIGINT', async () => {
@@ -173,6 +149,7 @@ async function main() {
     });
 
 }
+
 
 // start process
 main()

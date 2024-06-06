@@ -1,26 +1,13 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
 import chaiSpy from 'chai-spies';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
 import fs from 'fs';
-
-import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
-import { NetworkService } from '../src/service/networkService';
-import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
-import { DeviceService, ESService, Gateway, InputService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService, User, Util } from 'rest.portal';
-import { CheckTunDevicesPolicyAuthn } from '../src/task/checkTunDevicesVSPolicyAuthn';
-import { DhcpService } from 'rest.portal/service/dhcpService';
-import { exec } from 'child_process';
-import { AuthSession } from 'rest.portal/model/authSession';
-import { TunService } from '../src/service/tunService';
+import { DeviceService, ESService, InputService, IpIntelligenceService, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisService, SessionService, SystemLogService, TunnelService } from 'rest.portal';
 import { BroadcastService } from 'rest.portal/service/broadcastService';
-
-
+import { DhcpService } from 'rest.portal/service/dhcpService';
+import { NetworkService } from '../src/service/networkService';
+import { TunService } from '../src/service/tunService';
+import { CheckTunDevicesPolicyAuthn } from '../src/task/checkTunDevicesVSPolicyAuthn';
 
 chai.use(chaiHttp);
 chai.use(chaiSpy);
@@ -62,10 +49,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         chai.spy.restore();
     })
 
-
-
     it('check without tun devices', async () => {
-
 
         const spy = chai.spy.on(NetworkService, 'getTunDevices', async () => {
             return [];
@@ -82,12 +66,9 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy).to.have.been.called;
         expect(spyTun).not.have.been.called;
 
-
-
     }).timeout(100000)
 
     it('check with tun device', async () => {
-
 
         const spyTun = chai.spy.on(TunService, 'delete', async () => {
 
@@ -106,8 +87,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy1).to.have.been.called;
         expect(spyTun).to.have.been.called;
         expect(spy2).to.have.been.called;
-
-
 
     }).timeout(100000)
 
@@ -128,8 +107,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
             return undefined;
         })
 
-
-
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
             tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
@@ -142,12 +119,7 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy2).to.have.been.called;
         expect(spy3).to.have.been.called;
 
-
-
-
     }).timeout(100000)
-
-
 
     it('check with tun device with tunnel without sessionid', async () => {
         const spyTun = chai.spy.on(TunService, 'delete', async () => {
@@ -168,7 +140,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         const spy4 = chai.spy.on(sessionService, 'getSession', async (x: any) => {
             return undefined;
         })
-
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
             tunnelService, sessionService, policyService, deviceService);
@@ -209,8 +180,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
             return { isLocked: true };
         })
 
-
-
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
             tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
@@ -226,7 +195,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy5).to.have.been.called;
 
     }).timeout(100000)
-
 
     it('check with tun device with tunnel with session with user and authenticate', async () => {
         const spyTun = chai.spy.on(TunService, 'delete', async () => {
@@ -256,8 +224,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
             return {};
         })
 
-
-
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
             tunnelService, sessionService, policyService, deviceService);
         checker.setGatewayId('test');
@@ -274,8 +240,6 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy6).to.have.been.called;
 
     }).timeout(100000)
-
-
 
     it('check with tun device with tunnel with session with user and will not authenticate', async () => {
         const spyTun = chai.spy.on(TunService, 'delete', async () => {
@@ -305,12 +269,9 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
             throw new Error('');
         })
 
-
         const spy7 = chai.spy.on(sessionService, 'deleteSession', async (x: any) => {
             return {};
         })
-
-
 
         const checker = new CheckTunDevicesPolicyAuthn(redis, bcastService, redisConfig,
             tunnelService, sessionService, policyService, deviceService);
@@ -342,6 +303,5 @@ describe('checkTunDevicesVSPolicyAuthn', () => {
         expect(spy1).to.have.been.called;
 
     })
-
 
 })

@@ -1,13 +1,6 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import { Util } from 'rest.portal';
-
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;

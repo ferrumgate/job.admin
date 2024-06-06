@@ -1,19 +1,10 @@
-
-
-//docker run --net=host --name redis --rm -d redis
-
-
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { RedisService, SystemLogService } from 'rest.portal';
-import { Gateway, Network, RedisConfigWatchService, Service, Util } from 'rest.portal';
-import { RedisOptions } from '../src/model/redisOptions';
+import fs from 'fs';
+import { Gateway, Network, RedisConfigWatchService, RedisService, Service, SystemLogService, Util } from 'rest.portal';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 import { DockerService } from '../src/service/dockerService';
 import { CheckServices } from '../src/task/checkServices';
-import fs from 'fs';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
-
-
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -28,8 +19,6 @@ describe('checkServices', () => {
     beforeEach(async () => {
         await simpleRedis.flushAll();
 
-
-
     })
 
     async function closeAllServices() {
@@ -41,9 +30,7 @@ describe('checkServices', () => {
         }
     }
 
-
     async function createSampleData() {
-
 
         let network: Network = {
             id: '6hiryy8ujv3n',
@@ -55,7 +42,6 @@ describe('checkServices', () => {
             updateDate: new Date().toISOString()
         };
 
-
         let gateway: Gateway = {
             id: gatewayId,
             name: 'myserver',
@@ -65,8 +51,6 @@ describe('checkServices', () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString()
         }
-
-
 
         let service: Service = {
             id: Util.randomNumberString(),
@@ -134,7 +118,6 @@ describe('checkServices', () => {
             return undefined;
         }
 
-
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
 
@@ -157,10 +140,8 @@ describe('checkServices', () => {
             return null;
         }
 
-
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
-
 
         //network disabled
         closeAllCalled = false;
@@ -168,7 +149,6 @@ describe('checkServices', () => {
         config.getNetworkByGateway = async () => {
             return network;
         }
-
 
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
@@ -178,10 +158,8 @@ describe('checkServices', () => {
         closeAllCalled = false;
         network.serviceNetwork = '';
 
-
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.true;
-
 
         //evertytin normal check if compare called
         network.serviceNetwork = '1.2.3.4'
@@ -199,10 +177,7 @@ describe('checkServices', () => {
         await checkservices.checkServices();
         expect(closeAllCalled).to.be.false;
 
-
-
     }).timeout(30000)
-
 
     it('compare', async () => {
         process.env.REDIS_HOST = "127.0.0.1:6379"
@@ -210,8 +185,6 @@ describe('checkServices', () => {
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-
-
 
         const config = new MockConfig();
         const checkservices = new CheckServices(config, new BroadcastService(), docker);
@@ -258,16 +231,12 @@ describe('checkServices', () => {
 
     }).timeout(1200000);
 
-
-
     it('compare', async () => {
         process.env.REDIS_HOST = "127.0.0.1:6379"
         process.env.REDIS_INTEL_HOST = "127.0.0.1:6379"
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-
-
 
         const config = new MockConfig();
         const checkservices = new CheckServices(config, new BroadcastService(), docker);
@@ -311,7 +280,6 @@ describe('checkServices', () => {
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
-
         //service disabled scenario
 
         runnings = await docker.getAllRunning(gatewayId);
@@ -326,7 +294,6 @@ describe('checkServices', () => {
         await Util.sleep(1000);
         runnings = await docker.getAllRunning(gatewayId);
         expect(runnings.filter(x => x.name.includes(`fg-${gatewayId}-svc`)).length).to.equal(0);
-
 
         // service enabled last update time changed
         service.isEnabled = true;
@@ -357,8 +324,6 @@ describe('checkServices', () => {
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
-
-
         // start 1 port previously, but there is no replica with this number 10
         await docker.run(service, gatewayId, 'host', 'ferrumgate.zero', port0.port, port0.isTcp, port0.isUdp, 10);
         runnings = await docker.getAllRunning(gatewayId);
@@ -381,13 +346,10 @@ describe('checkServices', () => {
         await checkservices.closeAllServices();
         await Util.sleep(1000);
 
-
         delete process.env.REDIS_HOST;
         delete process.env.REDIS_INTEL_HOST;
 
-
     }).timeout(1200000);
-
 
     it('open 250 service', async () => {
         process.env.REDIS_HOST = "127.0.0.1:6379"
@@ -395,8 +357,6 @@ describe('checkServices', () => {
         await closeAllServices();
         const { gateway, network, service } = await createSampleData();
         const docker = new DockerService();
-
-
 
         const config = new MockConfig();
         const checkservices = new CheckServices(config, new BroadcastService(), docker);
@@ -423,16 +383,9 @@ describe('checkServices', () => {
         await checkservices.closeAllServices();
         // start 1 port previously
 
-
-
-
         delete process.env.REDIS_HOST;
         delete process.env.REDIS_INTEL_HOST;
 
-
     }).timeout(1200000);
-
-
-
 
 })

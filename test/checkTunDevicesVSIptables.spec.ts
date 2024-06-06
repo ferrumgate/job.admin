@@ -1,19 +1,8 @@
-
-//docker run --net=host --name redis --rm -d redis
-
-
-import chai, { util } from 'chai';
+import chai from 'chai';
 import chaiHttp from 'chai-http';
-import { utils } from 'mocha';
-import fspromise from 'fs/promises';
 import fs from 'fs';
-
-import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
-import { NetworkService } from '../src/service/networkService';
-import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
 import { RedisService, Util } from 'rest.portal';
-
-
+import { CheckTunDevicesVSIptables } from '../src/task/checkTunDevicesVSIptables';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -52,9 +41,6 @@ describe('checkTunDevicesVSIptables', () => {
         const result = await Util.exec('ls');
         expect(deleteExecuted).to.be.true;
 
-
     }).timeout(100000)
-
-
 
 })

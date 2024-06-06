@@ -1,18 +1,16 @@
-
-import { GatewayBasedTask } from "./gatewayBasedTask";
-import { NetworkService } from "../service/networkService";
-import { ConfigService, DeviceService, logger, PolicyService, RedisService, SessionService, TunnelService } from "rest.portal";
-import { RedisOptions } from "../model/redisOptions";
-import { TunService } from "../service/tunService";
-import { ConfigWatch } from "rest.portal/model/config";
 import NodeCache from "node-cache";
+import { ConfigService, DeviceService, logger, PolicyService, RedisService, SessionService, TunnelService } from "rest.portal";
+import { ConfigWatch } from "rest.portal/model/config";
 import { BroadcastService } from "rest.portal/service/broadcastService";
+import { NetworkService } from "../service/networkService";
+import { TunService } from "../service/tunService";
+import { GatewayBasedTask } from "./gatewayBasedTask";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
+
 /***
  * @summary we need to check tun devices to authentication rules
  * sometimes ip intelligence adds new blacklist item
  */
-
 export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
 
     protected timer: any | null = null;
@@ -78,7 +76,6 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
                             continue;
                         }
 
-
                         try {
                             const devicePosture = await this.deviceService.getDevicePosture(session.deviceId || '');
                             logger.debug(`device posture ${JSON.stringify(devicePosture)}`)
@@ -95,7 +92,6 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
                             logger.error(ignore);
                         }
 
-
                     }
                 }
             }
@@ -103,7 +99,6 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
             logger.error(err);
         }
     }
-
 
     public override async start(): Promise<void> {
 
@@ -129,11 +124,9 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
                 clearIntervalAsync(this.configChangedTimer);
             this.configChangedTimer = null;
 
-
         } catch (err) {
             logger.error(err);
         } finally {
-
 
         }
     }
@@ -173,7 +166,5 @@ export class CheckTunDevicesPolicyAuthn extends GatewayBasedTask {
 
         }
     }
-
-
 
 }
