@@ -1,15 +1,17 @@
-import NodeCache from "node-cache";
-import { logger, RedisService } from "rest.portal";
-import { NetworkService } from "../service/networkService";
-import { TunService } from "../service/tunService";
-import { GatewayBasedTask } from "./gatewayBasedTask";
-const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
+import { GatewayBasedTask } from "./gatewayBasedTask";
+import { NetworkService } from "../service/networkService";
+import { logger, RedisService } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
+import { TunService } from "../service/tunService";
+import NodeCache from "node-cache";
+const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 /***
  * @summary we need to check device tun devices againt to redis
  * if tun not exits then there is a problem
  * delete tun device
  */
+
 export class CheckTunDevicesVSRedis extends GatewayBasedTask {
 
     protected timer: any | null = null;

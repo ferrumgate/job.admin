@@ -1,5 +1,6 @@
 import { logger, Util } from "rest.portal";
 
+
 /**
  * @summary 
  */
@@ -26,6 +27,7 @@ export class NetworkService {
         const log = await Util.exec(cmd);
         if (log)
             logger.info(log);
+
 
     }
     static async linkDown(tun: string) {
@@ -81,9 +83,12 @@ export class NetworkService {
         if (log2)
             logger.info(log2)
 
+
         const log = await Util.exec(`iptables -t mangle -A PREROUTING -i ${tun} -j CONNMARK --set-mark ${trackId}`)
         if (log)
             logger.info(log)
+
+
 
     }
 
@@ -168,6 +173,7 @@ export class NetworkService {
 
     }
 
+
     static async getTunDevices() {
         logger.info(`getting tun devices`);
         //ip link show type tun|grep ferrum|tr -d ' '|cut -d ':' -f2
@@ -220,6 +226,7 @@ export class NetworkService {
         })
     }
 
+
     static async getManglePreroutingTableDeviceRules() {
         logger.info(`getting iptables PREROUTING chain`);
         //iptables -S INPUT
@@ -235,6 +242,7 @@ export class NetworkService {
         })
     }
 
+
     static async deleteTableIptables(rule: string) {
         logger.info(`deleting input table iptables ${rule}`);
         let output = await Util.exec(`iptables ${rule}`);
@@ -247,5 +255,7 @@ export class NetworkService {
         if (output)
             logger.info(output);
     }
+
+
 
 }

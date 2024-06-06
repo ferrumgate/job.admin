@@ -1,14 +1,23 @@
+
+//docker run --net=host --name redis --rm -d redis
+
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { Gateway, Group, Network, RedisConfigService, RedisConfigWatchCachedService, RedisService, Service, SystemLogService, Tunnel, TunnelService, User, Util } from 'rest.portal';
-import { AuthorizationRule } from 'rest.portal/model/authorizationPolicy';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
-import { DhcpService } from 'rest.portal/service/dhcpService';
-import toml from 'toml';
+
+import fs, { watch } from 'fs';
+import { IAmAlive } from '../src/task/iAmAlive';
+
+import { ESService, Gateway, Group, InputService, IpIntelligenceListService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisConfigWatchService, RedisService, Service, SystemLogService, Tunnel, TunnelService, User, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
 import { SystemWatcherTask } from '../src/task/systemWatcherTask';
+import { PolicyWatcherTask } from '../src/task/policyWatcherTask';
+import { AuthorizationRule } from 'rest.portal/model/authorizationPolicy';
+import { DhcpService } from 'rest.portal/service/dhcpService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
 import { TrackWatcherTask } from '../src/task/trackWatcherTask';
+import toml from 'toml';
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -17,6 +26,7 @@ const tmpfolder = '/tmp/ferrumtest';
 const encKey = 'unvjukt3i62bxkr0d6f0lpvlho5fvqb1'
 describe('trackWatcherTask', () => {
     const redis = new RedisService();
+
 
     beforeEach(async () => {
         await redis.flushAll();
@@ -38,6 +48,7 @@ describe('trackWatcherTask', () => {
 
         }
     }
+
 
     function createSampleData() {
         let network: Network = {
@@ -74,6 +85,7 @@ describe('trackWatcherTask', () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1
+
 
         }
         let service2: Service = {
@@ -167,6 +179,7 @@ describe('trackWatcherTask', () => {
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
 
+
         const bcastService = new BroadcastService();
 
         const {
@@ -181,6 +194,7 @@ describe('trackWatcherTask', () => {
         watcher.setGatewayId(gateway.id);
         await watcher.start();
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
+
 
         await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
@@ -206,6 +220,8 @@ describe('trackWatcherTask', () => {
 
     }).timeout(120000);
 
+
+
     it('tunnelConfirmed multi/tunnel expired', async () => {
         const filename = `/tmp/${Util.randomNumberString(16)}.yaml`;
         const systemLog = new SystemLogService(new RedisService(), new RedisService(), encKey);
@@ -230,6 +246,7 @@ describe('trackWatcherTask', () => {
         watcher.setGatewayId(gateway.id);
         await watcher.start();
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
+
 
         await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
@@ -258,16 +275,20 @@ describe('trackWatcherTask', () => {
         const keys2 = (await watcher.lmdbGetRange('/')).asArray;
         expect(keys2.length).to.equal(2);
 
+
         bcastService.emit('tunnelExpired', tunnel1);
         await Util.sleep(2000);
         const keys3 = (await watcher.lmdbGetRange('/')).asArray;
         expect(keys3.length).to.equal(0);
+
 
         await watcher.stop();
         await redisConfig.stop();
         await redisConfigService.stop();
 
     }).timeout(120000);
+
+
 
     it('tunnelConfirmed multi/tunnel expired 2', async () => {
         const filename = `/tmp/${Util.randomNumberString(16)}.yaml`;
@@ -293,6 +314,7 @@ describe('trackWatcherTask', () => {
         watcher.setGatewayId(gateway.id);
         await watcher.start();
         const lmdb = await LmdbService.open('ferrumgate', tmpfolder, 'string', 16);
+
 
         await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
@@ -321,16 +343,19 @@ describe('trackWatcherTask', () => {
         const keys2 = (await watcher.lmdbGetRange('/')).asArray;
         expect(keys2.length).to.equal(4);
 
+
         bcastService.emit('tunnelExpired', tunnel1);
         await Util.sleep(2000);
         const keys3 = (await watcher.lmdbGetRange('/')).asArray;
         expect(keys3.length).to.equal(2);
+
 
         await watcher.stop();
         await redisConfig.stop();
         await redisConfigService.stop();
 
     }).timeout(120000);
+
 
     it('configChanged', async () => {
         const filename = `/tmp/${Util.randomNumberString(16)}.yaml`;
@@ -358,6 +383,7 @@ groupIds = ",grp1,grp2,"
         expect(obj.userId).exist;
 
     })
+
 
     it('configChanged', async () => {
         const filename = `/tmp/${Util.randomNumberString(16)}.yaml`;
@@ -387,6 +413,7 @@ groupIds = ",grp1,grp2,"
         const bcastService = new BroadcastService();
         const systemWatcher = new SystemWatcherTask(new RedisService(), redisConfigService, new TunnelService(redisConfigService, new RedisService(), new DhcpService(redisConfigService, new RedisService())), bcastService);
         await systemWatcher.start();
+
 
         const watcher = new TrackWatcherTask(tmpfolder,
             redisConfigService, bcastService);
@@ -419,5 +446,7 @@ groupIds = ",grp1,grp2,"
         await redisConfigService.stop();
 
     }).timeout(120000);
+
+
 
 })

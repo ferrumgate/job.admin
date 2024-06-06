@@ -1,6 +1,10 @@
+
+
+import { GatewayBasedTask } from "./gatewayBasedTask";
+import { NetworkService } from "../service/networkService";
 import os from 'os';
 import { logger, RedisService } from "rest.portal";
-import { GatewayBasedTask } from "./gatewayBasedTask";
+import { RedisOptions } from "../model/redisOptions";
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
 
 /***
@@ -16,6 +20,7 @@ export class IAmAlive extends GatewayBasedTask {
         super();
     }
 
+
     public async check() {
 
         try {
@@ -27,7 +32,6 @@ export class IAmAlive extends GatewayBasedTask {
             const trx = await this.redis.multi();
             await trx.hset(hostkey, {
                 id: this.gatewayId,
-                nodeId: this.nodeId,
                 arch: os.arch(),
                 cpusCount: os.cpus().length,
                 cpuInfo: os.cpus().find(x => x)?.model,
@@ -50,6 +54,7 @@ export class IAmAlive extends GatewayBasedTask {
         }
     }
 
+
     public override async start(): Promise<void> {
 
         await this.check();
@@ -66,6 +71,7 @@ export class IAmAlive extends GatewayBasedTask {
         } catch (err) {
             logger.error(err);
         } finally {
+
 
         }
     }

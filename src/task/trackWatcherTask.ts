@@ -1,9 +1,12 @@
-import { logger, RedisConfigWatchService, Tunnel, User } from "rest.portal";
+import { Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchService, Service, Tunnel, User } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
-import { BroadcastService } from "rest.portal/service/broadcastService";
+import { PolicyAuthzResult } from "rest.portal/service/policyService";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
+import fs from 'fs';
+import { BroadcastService } from "rest.portal/service/broadcastService";
+import toml from 'toml';
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculate all tunnel data for service 
@@ -49,6 +52,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
         await this.lmdbService.close();
     }
 
+
     async tunnelExpired(tun: Tunnel) {
         try {
             logger.info(`track watcher tunnel expired tunId:${tun.id}`)
@@ -59,6 +63,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
             this.configChangedTimes.push(new Date().getTime());
         }
     }
+
 
     async getUser(id: string) {
         const user = await this.redisConfigService.getUserById(id);
@@ -75,6 +80,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
         }
         return user;
 
+
     }
     async tunnelConfirmed(tun: Tunnel) {
         try {
@@ -87,6 +93,7 @@ export class TrackWatcherTask extends GatewayBasedTask {
                 return;
             }
             await this.lmdbWrite(tun, user);
+
 
         } catch (err) {
             logger.error(err);
@@ -179,6 +186,7 @@ groupIds = ",${user.groupIds.filter(x => x.trim()).filter(y => y).join(',')},"
         await this.lmdbService.put(this.createLastUpdateKey(tun), new Date().getTime().toString())
     }
 
+
     async lmdbGetRange(key: string) {
         const arr = new Uint8Array(255);
         arr.fill(255, 0, 254);
@@ -198,5 +206,6 @@ groupIds = ",${user.groupIds.filter(x => x.trim()).filter(y => y).join(',')},"
                 }
             })
     }
+
 
 }

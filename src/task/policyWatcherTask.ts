@@ -1,10 +1,12 @@
-import { logger, PolicyService, RedisConfigWatchService, Service, Tunnel } from "rest.portal";
+import { Gateway, logger, PolicyService, RedisConfigService, RedisConfigWatchService, Service, Tunnel } from "rest.portal";
 import { ConfigWatch } from "rest.portal/model/config";
-import { BroadcastService } from "rest.portal/service/broadcastService";
 import { PolicyAuthzResult } from "rest.portal/service/policyService";
 import { clearIntervalAsync, setIntervalAsync } from "set-interval-async";
 import { LmdbService } from "../service/lmdbService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
+import fs from 'fs';
+import { BroadcastService } from "rest.portal/service/broadcastService";
+import toml from 'toml';
 /**
  * @summary follows system logs, all tunnels, all config changes
  * and recalculates policy 
@@ -51,6 +53,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         await this.lmdbService.clear();
         await this.lmdbService.close();
     }
+
 
     async tunnelExpired(tun: Tunnel) {
         try {
@@ -100,6 +103,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
                 logger.warn(`policy watcher writing policy svcId: ${svc.id} tunId: ${tun.id} trackId: ${tun.trackId}`);
                 await this.lmdbWrite(tun, presult, svc);
             }
+
 
         } catch (err) {
             logger.error(err);
@@ -189,6 +193,7 @@ export class PolicyWatcherTask extends GatewayBasedTask {
         }
     }
 
+
     createKey(tun: Tunnel, svc?: Service) {
         if (tun && svc)
             return `/authorize/track/id/${tun.trackId}/service/id/${svc.id}`
@@ -225,5 +230,6 @@ export class PolicyWatcherTask extends GatewayBasedTask {
                 }
             })
     }
+
 
 }

@@ -1,3 +1,4 @@
+import { dir } from 'console';
 import lmdb from 'lmdb';
 
 /**
@@ -40,6 +41,7 @@ export class LmdbService {
         )
         return new LmdbService(database);
 
+
     }
     async clear() {
 
@@ -78,5 +80,8 @@ export class LmdbService {
     async range(option?: lmdb.RangeOptions) {
         return await this.database.getRange(option)
     }
+
+
+
 
 }

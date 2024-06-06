@@ -1,9 +1,16 @@
+
+//docker run --net=host --name redis --rm -d redis
+
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
 import fs from 'fs';
-import { RedisService, Tunnel, Util } from 'rest.portal';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
 import { WhenTunnelClosed } from '../src/task/whenTunnelClosed';
+import { RedisService, Tunnel, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
+
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -16,6 +23,8 @@ describe('whenTunnelClosed', () => {
         if (fs.existsSync(tmpfolder))
             await fs.rmSync(tmpfolder, { recursive: true, force: true });
     })
+
+
 
     it('onMessageExecuted', async () => {
         const key = 'tunnelkey';
@@ -61,6 +70,9 @@ describe('whenTunnelClosed', () => {
         expect(deleteExecuted).to.be.true;
         Util.exec = tmpFunction;//set back it again
 
+
+
     }).timeout(100000)
+
 
 })

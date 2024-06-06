@@ -1,8 +1,15 @@
+
+//docker run --net=host --name redis --rm -d redis
+
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
+
 import fs from 'fs';
 import { Service, Util } from 'rest.portal';
 import { DockerService } from '../src/service/dockerService';
+
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -38,6 +45,7 @@ describe('dockerService', () => {
         }
         return service;
     }
+
 
     it('normalize', async () => {
         await stopAllContaineers();
@@ -127,6 +135,7 @@ describe('dockerService', () => {
                     if (fs.existsSync('test/data/inspect.json.txt'))
                         return fs.readFileSync('test/data/inspect.json.txt').toString();
 
+
                     return '';
 
                 }
@@ -140,6 +149,8 @@ describe('dockerService', () => {
         expect(containers[0].image).to.equal(`registry.ferrumgate.zero/ferrumgate/ferrum.io:latest`);
         expect(containers[0].name).to.equal(`test-blabla`);
         expect(containers[0].details.FerrumSvcLastUpdate).exist;
+
+
 
     }).timeout(100000);
 
@@ -163,7 +174,9 @@ describe('dockerService', () => {
                 if (fs.existsSync('test/data/inspect.json.txt'))
                     return fs.readFileSync('test/data/inspect.json.txt').toString();
 
+
                 return '';
+
 
             }
         }
@@ -172,7 +185,10 @@ describe('dockerService', () => {
         expect(containers.length).to.equal(3);
         expect(containers[0].FerrumSvcLastUpdate).exist;
 
+
+
     }).timeout(10000);
+
 
     it('run/getAllRunning/stop', async () => {
         await stopAllContaineers();
@@ -203,7 +219,11 @@ describe('dockerService', () => {
         const pod2 = pods1.find(x => x.name.includes('fg-12345-svc'));
         expect(pod2).not.exist;
 
+
     }).timeout(30000);
+
+
+
 
     it('run/getAllRunning/stop 250 count', async () => {
         await stopAllContaineers();
@@ -233,6 +253,16 @@ describe('dockerService', () => {
 
         await stopAllContaineers();
 
+
     }).timeout(300000);
+
+
+
+
+
+
+
+
+
 
 })

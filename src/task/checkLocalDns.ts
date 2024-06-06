@@ -1,16 +1,25 @@
-import { isIPv4 } from "net";
-import { InputService, RedisConfigWatchService, logger } from "rest.portal";
-import { ConfigWatch } from "rest.portal/model/config";
-import { BroadcastService } from "rest.portal/service/broadcastService";
-import { LmdbService } from "../service/lmdbService";
+
+
 import { GatewayBasedTask } from "./gatewayBasedTask";
+import { NetworkService } from "../service/networkService";
+import { DockerService, Pod } from "../service/dockerService";
+import { InputService, logger, RedisService, Service, } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
+import { RedisConfigWatchService } from "rest.portal";
+import { ConfigWatch } from "rest.portal/model/config";
+import { LmdbService } from "../service/lmdbService";
+import { BroadcastService } from "rest.portal/service/broadcastService";
+import { isIPv4 } from "net";
+
 
 const { setIntervalAsync, clearIntervalAsync } = require('set-interval-async');
-
 /***
  *@summary add dns records according to services
  */
+
+
 export class CheckLocalDns extends GatewayBasedTask {
+
 
     protected timerCheck: any | null = null;
 
@@ -32,9 +41,11 @@ export class CheckLocalDns extends GatewayBasedTask {
         await this.lmdbService.clear();
     }
 
+
     public async checkServices() {
 
         try {
+
 
             await this.init();
             if (!this.confChangedTimes.length) return;
@@ -46,6 +57,7 @@ export class CheckLocalDns extends GatewayBasedTask {
             const defaultDnsRecords = await this.configService.getDnsRecords();
             const gateway = await this.configService.getGateway(this.gatewayId);
             const currentNetwork = networks.find(x => x.id == gateway?.networkId);
+
 
             //this works like this, when connected to multiple networks
             // we need to resolve it
@@ -68,6 +80,8 @@ export class CheckLocalDns extends GatewayBasedTask {
                     return null;
                 }
             }).filter(x => x);
+
+
 
             const serviceAliasRecords = services
                 .filter(x => x.networkId == currentNetwork?.id)
@@ -96,6 +110,10 @@ export class CheckLocalDns extends GatewayBasedTask {
                     };
 
                 })
+
+
+
+
 
             const dnsAliases = defaultDnsRecords.filter(x => x.isEnabled).map(alias => {
 

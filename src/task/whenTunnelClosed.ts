@@ -1,7 +1,13 @@
-import { logger, Tunnel } from "rest.portal";
-import { BroadcastService } from "rest.portal/service/broadcastService";
-import { TunService } from "../service/tunService";
+/// when client connected execute this task
+
+import { NetworkService } from "../service/networkService";
 import { GatewayBasedTask } from "./gatewayBasedTask";
+
+import { HelperService, logger, RedisService, Tunnel } from "rest.portal";
+import { RedisOptions } from "../model/redisOptions";
+import { TunService } from "../service/tunService";
+import { BroadcastService } from "rest.portal/service/broadcastService";
+
 
 /**
  * @summary when a client disconnects, publish its tunnel key
@@ -13,7 +19,9 @@ export class WhenTunnelClosed extends GatewayBasedTask {
         super();
     }
 
+
     async onMessage(tunnel: Tunnel) {
+
 
         try {
             await this.readGatewayId();
@@ -31,6 +39,7 @@ export class WhenTunnelClosed extends GatewayBasedTask {
 
         }
 
+
     }
     async start(): Promise<void> {
         try {
@@ -45,7 +54,9 @@ export class WhenTunnelClosed extends GatewayBasedTask {
         }
     }
 
+
     async stop(): Promise<void> {
+
 
     }
 

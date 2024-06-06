@@ -1,10 +1,23 @@
-import chai from 'chai';
+
+//docker run --net=host --name redis --rm -d redis
+
+
+import chai, { util } from 'chai';
 import chaiHttp from 'chai-http';
+
+import { WhenClientAuthenticated } from '../src/task/whenClientAuthenticated';
+import { basename } from 'path';
+import { utils } from 'mocha';
+import fspromise from 'fs/promises';
 import fs from 'fs';
-import { Gateway, Network, RedisConfigWatchService, RedisService, SystemLogService } from 'rest.portal';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
-import { NetworkService } from '../src/service/networkService';
 import { CheckIptablesCommon } from '../src/task/checkIptablesCommon';
+import { Gateway, Network, RedisConfigWatchService, RedisService, SystemLogService, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
+import { NetworkService } from '../src/service/networkService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
+
+
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -44,6 +57,7 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
+
         const bcast = new BroadcastService();
         const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
@@ -53,6 +67,7 @@ describe('checkIptablesCommonTask', () => {
         }
         await task.check();
         expect(methodCalled).to.be.true;
+
 
     }).timeout(100000)
 
@@ -74,6 +89,7 @@ describe('checkIptablesCommonTask', () => {
         await task.check();
         expect(methodCalled).to.be.true;
 
+
     }).timeout(100000)
 
     it('check network not found', async () => {
@@ -87,6 +103,8 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
+
+
         const bcast = new BroadcastService();
         const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
@@ -96,6 +114,7 @@ describe('checkIptablesCommonTask', () => {
         }
         await task.check();
         expect(methodCalled).to.be.true;
+
 
     }).timeout(100000);
 
@@ -110,6 +129,7 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
+
         const bcast = new BroadcastService();
         const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
@@ -119,6 +139,7 @@ describe('checkIptablesCommonTask', () => {
         }
         await task.check();
         expect(methodCalled).to.be.true;
+
 
     }).timeout(100000)
 
@@ -133,6 +154,7 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
+
         const bcast = new BroadcastService();
         const task = new CheckIptablesCommon(new MockConfig2(), bcast);
         task.setGatewayId('123');
@@ -143,7 +165,9 @@ describe('checkIptablesCommonTask', () => {
         await task.check();
         expect(methodCalled).to.be.true;
 
+
     }).timeout(100000)
+
 
     it('configChanged gateway', async () => {
 
@@ -163,6 +187,7 @@ describe('checkIptablesCommonTask', () => {
             }
         }
 
+
         const bcast = new BroadcastService();
         const task = new CheckIptablesCommonMock(new MockConfig2(), bcast);
         task.setGatewayId('123');
@@ -174,6 +199,9 @@ describe('checkIptablesCommonTask', () => {
         bcast.emit('configChanged', { path: '/config/gateways', val: { id: '1234' } });
         expect(task.isCheckCalled).to.be.false;
 
+
     }).timeout(100000)
+
+
 
 })

@@ -1,11 +1,23 @@
+
+//docker run --net=host --name redis --rm -d redis
+
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
-import { Gateway, Group, Network, RedisConfigService, RedisConfigWatchCachedService, RedisService, Service, SystemLogService, User, Util } from 'rest.portal';
-import { AuthorizationRule } from 'rest.portal/model/authorizationPolicy';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
-import toml from 'toml';
+
+import fs, { watch } from 'fs';
+import { IAmAlive } from '../src/task/iAmAlive';
+
+import { ESService, Gateway, Group, InputService, IpIntelligenceListService, IpIntelligenceService, Network, PolicyService, RedisConfigService, RedisConfigWatchCachedService, RedisConfigWatchService, RedisService, Service, SystemLogService, Tunnel, TunnelService, User, Util } from 'rest.portal';
+import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
+import { SystemWatcherTask } from '../src/task/systemWatcherTask';
+import { PolicyWatcherTask } from '../src/task/policyWatcherTask';
+import { AuthorizationRule } from 'rest.portal/model/authorizationPolicy';
+import { DhcpService } from 'rest.portal/service/dhcpService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
+import { TrackWatcherTask } from '../src/task/trackWatcherTask';
+import toml from 'toml';
 import { PAuthzWatcherTask } from '../src/task/pAuthzWatcherTask';
 
 chai.use(chaiHttp);
@@ -15,6 +27,7 @@ const tmpfolder = '/tmp/ferrumtest';
 const encKey = 'unvjukt3i62bxkr0d6f0lpvlho5fvqb1'
 describe('pAuthzWatcherTask', () => {
     const redis = new RedisService();
+
 
     beforeEach(async () => {
         await redis.flushAll();
@@ -36,6 +49,7 @@ describe('pAuthzWatcherTask', () => {
 
         }
     }
+
 
     function createSampleData() {
         let network: Network = {
@@ -72,6 +86,7 @@ describe('pAuthzWatcherTask', () => {
             insertDate: new Date().toISOString(),
             updateDate: new Date().toISOString(),
             count: 1
+
 
         }
         let service2: Service = {
@@ -150,6 +165,7 @@ describe('pAuthzWatcherTask', () => {
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
 
+
         }
         let rule2: AuthorizationRule = {
             id: 'rule2',
@@ -171,6 +187,7 @@ describe('pAuthzWatcherTask', () => {
             isEnabled: true,
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
+
 
         }
         let rule3: AuthorizationRule = {
@@ -194,7 +211,9 @@ describe('pAuthzWatcherTask', () => {
             updateDate: new Date().toISOString(),
             insertDate: new Date().toISOString(),
 
+
         }
+
 
         return {
             network, gateway, service1, service2,
@@ -213,6 +232,7 @@ describe('pAuthzWatcherTask', () => {
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
 
+
         const bcastService = new BroadcastService();
 
         const {
@@ -225,6 +245,7 @@ describe('pAuthzWatcherTask', () => {
         const watcher = new PAuthzWatcherTask(tmpfolder,
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
+
 
         {
 
@@ -253,7 +274,11 @@ describe('pAuthzWatcherTask', () => {
 
         }
 
+
+
+
     }).timeout(120000);
+
 
     it('configChanged', async () => {
         const filename = `/tmp/${Util.randomNumberString(16)}.yaml`;
@@ -264,6 +289,7 @@ describe('pAuthzWatcherTask', () => {
         const redisConfigService = new RedisConfigWatchCachedService(new RedisService(),
             new RedisService(), systemLog, true, encKey);
         await redisConfigService.start();
+
 
         const bcastService = new BroadcastService();
 
@@ -278,6 +304,8 @@ describe('pAuthzWatcherTask', () => {
             redisConfigService, bcastService);
         watcher.setGatewayId(gateway.id);
         await watcher.start();
+
+
 
         await Util.sleep(5000);
         await redisConfig.saveNetwork(network);
@@ -294,7 +322,7 @@ describe('pAuthzWatcherTask', () => {
         await Util.sleep(3000);
         bcastService.emit('configChanged', `/config/users`);
 
-        await Util.sleep(30000);
+        await Util.sleep(15000);
 
         const keys = (await watcher.lmdbGetRange('/')).asArray;
 
@@ -304,5 +332,8 @@ describe('pAuthzWatcherTask', () => {
         await redisConfigService.stop();
 
     }).timeout(120000);
+
+
+
 
 })

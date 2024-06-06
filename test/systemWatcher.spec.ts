@@ -1,11 +1,20 @@
+
+//docker run --net=host --name redis --rm -d redis
+
+
 import chai from 'chai';
 import chaiHttp from 'chai-http';
-import fs from 'fs';
+
+import fs, { watch } from 'fs';
+import { IAmAlive } from '../src/task/iAmAlive';
+
 import { RedisConfigWatchService, RedisService, SystemLogService, Tunnel, TunnelService, Util } from 'rest.portal';
-import { BroadcastService } from 'rest.portal/service/broadcastService';
-import { DhcpService } from 'rest.portal/service/dhcpService';
+import { RedisOptions } from '../src/model/redisOptions';
 import { LmdbService } from '../src/service/lmdbService';
 import { SystemWatcherTask } from '../src/task/systemWatcherTask';
+import { DhcpService } from 'rest.portal/service/dhcpService';
+import { BroadcastService } from 'rest.portal/service/broadcastService';
+
 
 chai.use(chaiHttp);
 const expect = chai.expect;
@@ -76,6 +85,7 @@ describe('systemWatcher', () => {
 
     it('configChanged', async () => {
 
+
         const bcast = new BroadcastService();
         let isTunnelConfigCalled = false;
 
@@ -95,9 +105,12 @@ describe('systemWatcher', () => {
         await Util.sleep(5000);
         expect(isTunnelConfigCalled).to.be.true;
 
+
     }).timeout(100000)
 
+
     it('processTunnelEvents', async () => {
+
 
         const bcast = new BroadcastService();
         let isTunnelConfigCalled = false;
@@ -118,6 +131,9 @@ describe('systemWatcher', () => {
         await Util.sleep(5000);
         expect(isTunnelConfigCalled).to.be.true;
 
+
     }).timeout(100000)
+
+
 
 })

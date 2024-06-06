@@ -1,4 +1,4 @@
-FROM node:20.11.1-bullseye-slim
+FROM node:18.13.0-bullseye-slim
 RUN apt update &&\
     apt install --assume-yes --no-install-recommends iproute2 openssl \
     iputils-ping net-tools ipvsadm dnsutils iperf3 \

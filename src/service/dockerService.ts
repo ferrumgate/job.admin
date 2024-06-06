@@ -1,5 +1,6 @@
 import { logger, Service, Util } from "rest.portal";
 import { NetworkService } from "./networkService";
+import * as ChildProcess from "node:child_process";
 
 export interface Pod {
     id: string, image: string, name: string; details?: any; svc?: { id: string, port: number, isTcp: boolean, isUdp: boolean, replica: number, lastUpdate: string, gatewayId: string }
@@ -58,6 +59,8 @@ ${tcp_listen} ${udp_listen}
 -e INSTANCE_ID=${Util.randomNumberString(16)}`
         return env.replace(/\n/g, ' ');
     }
+
+
 
     async execute(cmd: string) {
         return await Util.exec(cmd)
@@ -187,7 +190,11 @@ ${image}`
                 }
             }
         })
+
+
+
         return pods;
+
     }
 
     async stop(pod: Pod) {
@@ -207,5 +214,7 @@ ${image}`
             logger.error(err);
         }
     }
+
+
 
 }
