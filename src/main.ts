@@ -51,7 +51,7 @@ async function main() {
     const tunnelService = new TunnelService(redisConfig, redis, new DhcpService(redisConfig, redis));
     const sessionService = new SessionService(redisConfig, redis);
     const bcastService = new BroadcastService();
-    const esService = new ESServiceExtended(redisConfig);
+    const esService = ESServiceExtended.create(redisConfig);
     const ipIntelligenceService = new IpIntelligenceService(redisConfig, redis, new InputService(), esService);
     const policyService = new PolicyService(redisConfig, ipIntelligenceService);
     const deviceService = new DeviceService(redisConfig, redis, redisLocal, esService);
